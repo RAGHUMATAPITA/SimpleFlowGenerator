@@ -10,8 +10,6 @@
 #include <sys/time.h>
 
 
-
-
 #include "TROOT.h"
 #include "TFile.h"
 #include "TTree.h"
@@ -20,9 +18,6 @@
 #include "TProfile.h"
 
 using namespace std;
-
-
-
 
 
 
@@ -43,6 +38,9 @@ TBranch *b_psi2;
 TBranch *b_charge;
 TBranch *b_pt;
 TBranch *b_phi;
+
+float calc4_event(float, float, float, float, float);
+float calc4_track(float, float, float, float, float, float, float, float, float);
 
 // Main part of program
 int main(int argc, char *argv[])
@@ -103,9 +101,12 @@ int main(int argc, char *argv[])
   TProfile *tp1d_v2pT_reco = new TProfile("tp1d_v2pT_reco","",200,0,2,-1e10,1e10,"");
 
   TProfile *tp1d_d2pT = new TProfile("tp1d_d2pT","",200,0,2,-1e10,1e10,"");
-
   TProfile *tp1d_c2 = new TProfile("tp1d_c2","",1,0,1000,-1e10,1e10,"");
   TProfile *tp1d_c2mult = new TProfile("tp1d_c2mult","",1000,0,1000,-1e10,1e10,"");
+
+  TProfile *tp1d_p4pT = new TProfile("tp1d_p4pT","",200,0,2,-1e10,1e10,"");
+  TProfile *tp1d_p4 = new TProfile("tp1d_p4","",1,0,1000,-1e10,1e10,"");
+  TProfile *tp1d_p4mult = new TProfile("tp1d_p4mult","",1000,0,1000,-1e10,1e10,"");
 
 
   TH1D *th1d_psi2_reco = new TH1D("th1d_psi2_reco","",630,-3.2,3.2);
@@ -164,19 +165,26 @@ int main(int argc, char *argv[])
       // --- first track loop, q-vectors
       float Q2x = 0;
       float Q2y = 0;
+      float Q4x = 0;
+      float Q4y = 0;
       for(int itrk=0; itrk<mult; itrk++)
 	{
 	  float phi = d_phi[itrk];
 	  Q2x += cos(2*phi);
 	  Q2y += sin(2*phi);
+	  Q4x += cos(4*phi);
+	  Q4y += sin(4*phi);
 	} // End of track loop
       float psi2reco = atan2(Q2y,Q2x);
       th1d_psi2_reco->Fill(psi2reco);
       th1d_psi2_tmr->Fill(psi2true-psi2reco);
       float two = ( Q2x*Q2x + Q2y*Q2y ) / (mult*mult - mult);
+      float four = calc4_event(Q2x,Q2y,Q4x,Q4y,mult);
 
       tp1d_c2->Fill(1,two);
       tp1d_c2mult->Fill(mult,two);
+      tp1d_p4->Fill(1,four);
+      tp1d_p4mult->Fill(mult,four);
 
       for(int itrk=0; itrk<mult; itrk++)
 	{
@@ -195,6 +203,12 @@ int main(int argc, char *argv[])
 
 	  float twoprime = ( u2x*Q2x + u2y*Q2y ) / (mult - 1);
 	  tp1d_d2pT->Fill(pt,twoprime);
+
+	  float u4x = cos(4*phi);
+	  float u4y = sin(4*phi);
+
+	  float fourprime = calc4_track(u2x,u2y,u4x,u4y,Q2x,Q2y,Q4x,Q4y,mult);
+	  tp1d_p4pT->Fill(pt,fourprime);
 
 	  ntracks++; // count total number of tracks
 	} // End of track loop
@@ -225,5 +239,49 @@ int main(int argc, char *argv[])
   cout<<"Execution time: "<<tdiff<<" seconds"<<endl;
 
   return 0;
+
+}
+
+
+
+float calc4_event(float Xn, float Yn, float X2n, float Y2n, float M)
+{
+
+  float Qn2 = Xn*Xn+Yn*Yn;
+  float Q2n2 = X2n*X2n+Y2n*Y2n;
+  float Qn4 = Qn2*Qn2;
+  float Qn2d = Xn*Xn-Yn*Yn;
+
+  float first = Qn4+Q2n2-(2*(X2n*Qn2d));
+  float second = 2*(2*(M-2)*Qn2)-(M*(M-3));
+
+  float W_4 = M*(M-1)*(M-2)*(M-3);
+
+  return (first-second)/W_4;
+
+}
+
+
+
+float calc4_track(float xn, float yn, float x2n, float y2n, float Xn, float Yn, float X2n, float Y2n, float M)
+{
+
+  // --- this code based on a simplified version of the analytical expression
+  // --- this code obviously has enormous room for improvement and cleanup, which is welcomed
+  // --- also, not i have never actually run this code, so i'm not sure it works
+  float one   = (xn*Xn + yn*Yn)*(Xn*Xn + Yn*Yn);
+  float two   = x2n*Xn*Xn - x2n*Yn*Yn + 2*y2n*Xn*Yn;
+  float three = xn*Xn*X2n + xn*Yn*Y2n - yn*(X2n*Yn - Xn*Y2n);
+  float four  = 2*M*(xn*Xn + yn*Yn);
+  float five  = 2*(Xn*Xn + Yn*Yn);
+  float six   = 7*(xn*Xn + yn*Yn);
+  float seven = xn*Xn + yn*Yn;
+  float eight = x2n*X2n + y2n*Y2n;
+  float nine = 2*(xn*Xn + yn*Yn);
+
+  float numerator = one - two - three - four - five + six - seven + eight + nine -2*M - 6;
+  float denominator = (M-1)*(M-2)*(M-3);
+
+  return numerator/denominator;
 
 }
