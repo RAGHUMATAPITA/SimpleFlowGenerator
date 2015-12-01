@@ -42,6 +42,11 @@ TBranch *b_phi;
 float calc4_event(float, float, float, float, float);
 float calc4_track(float, float, float, float, float, float, float, float, float);
 
+float calc4_event_YZ(float, float, float, float, float);
+float calc4_track_YZ(float, float, float, float, float, float, float, float, float);
+
+
+
 // Main part of program
 int main(int argc, char *argv[])
 {
@@ -97,16 +102,20 @@ int main(int argc, char *argv[])
   TH1D *th1d_pt = new TH1D("th1d_pt","",200,0,2);
   TH1D *th1d_phi = new TH1D("th1d_phi","",630,-3.2,3.2);
 
-  TProfile *tp1d_v2pT_true = new TProfile("tp1d_v2pT_true","",200,0,2,-1e10,1e10,"");
-  TProfile *tp1d_v2pT_reco = new TProfile("tp1d_v2pT_reco","",200,0,2,-1e10,1e10,"");
+  TProfile *tp1d_v2pT_true = new TProfile("tp1d_v2pT_true","",20,0,2,-1e10,1e10,"");
+  TProfile *tp1d_v2pT_reco = new TProfile("tp1d_v2pT_reco","",20,0,2,-1e10,1e10,"");
 
-  TProfile *tp1d_d2pT = new TProfile("tp1d_d2pT","",200,0,2,-1e10,1e10,"");
+  TProfile *tp1d_d2pT = new TProfile("tp1d_d2pT","",20,0,2,-1e10,1e10,"");
   TProfile *tp1d_c2 = new TProfile("tp1d_c2","",1,0,1000,-1e10,1e10,"");
   TProfile *tp1d_c2mult = new TProfile("tp1d_c2mult","",1000,0,1000,-1e10,1e10,"");
 
-  TProfile *tp1d_p4pT = new TProfile("tp1d_p4pT","",200,0,2,-1e10,1e10,"");
+  TProfile *tp1d_p4pT = new TProfile("tp1d_p4pT","",20,0,2,-1e10,1e10,"");
   TProfile *tp1d_p4 = new TProfile("tp1d_p4","",1,0,1000,-1e10,1e10,"");
   TProfile *tp1d_p4mult = new TProfile("tp1d_p4mult","",1000,0,1000,-1e10,1e10,"");
+
+  TProfile *tp1d_YZ_p4pT = new TProfile("tp1d_YZ_p4pT","",20,0,2,-1e10,1e10,"");
+  TProfile *tp1d_YZ_p4 = new TProfile("tp1d_YZ_p4","",1,0,1000,-1e10,1e10,"");
+  TProfile *tp1d_YZ_p4mult = new TProfile("tp1d_YZ_p4mult","",1000,0,1000,-1e10,1e10,"");
 
 
   TH1D *th1d_psi2_reco = new TH1D("th1d_psi2_reco","",630,-3.2,3.2);
@@ -180,11 +189,14 @@ int main(int argc, char *argv[])
       th1d_psi2_tmr->Fill(psi2true-psi2reco);
       float two = ( Q2x*Q2x + Q2y*Q2y ) / (mult*mult - mult);
       float four = calc4_event(Q2x,Q2y,Q4x,Q4y,mult);
+      float fourYZ = calc4_event_YZ(Q2x,Q2y,Q4x,Q4y,mult);
 
       tp1d_c2->Fill(1,two);
       tp1d_c2mult->Fill(mult,two);
       tp1d_p4->Fill(1,four);
       tp1d_p4mult->Fill(mult,four);
+      tp1d_YZ_p4->Fill(1,fourYZ);
+      tp1d_YZ_p4mult->Fill(mult,fourYZ);
 
       for(int itrk=0; itrk<mult; itrk++)
 	{
@@ -209,6 +221,9 @@ int main(int argc, char *argv[])
 
 	  float fourprime = calc4_track(u2x,u2y,u4x,u4y,Q2x,Q2y,Q4x,Q4y,mult);
 	  tp1d_p4pT->Fill(pt,fourprime);
+
+	  float fourprimeYZ = calc4_track_YZ(u2x,u2y,u4x,u4y,Q2x,Q2y,Q4x,Q4y,mult);
+	  tp1d_YZ_p4pT->Fill(pt,fourprimeYZ);
 
 	  ntracks++; // count total number of tracks
 	} // End of track loop
@@ -268,7 +283,7 @@ float calc4_track(float xn, float yn, float x2n, float y2n, float Xn, float Yn, 
 
   // --- this code based on a simplified version of the analytical expression
   // --- this code obviously has enormous room for improvement and cleanup, which is welcomed
-  // --- also, not i have never actually run this code, so i'm not sure it works
+  // --- also it is not clear if this code works correctly, but I think it doesn't
   float one   = (xn*Xn + yn*Yn)*(Xn*Xn + Yn*Yn);
   float two   = x2n*Xn*Xn - x2n*Yn*Yn + 2*y2n*Xn*Yn;
   float three = xn*Xn*X2n + xn*Yn*Y2n - yn*(X2n*Yn - Xn*Y2n);
@@ -285,3 +300,26 @@ float calc4_track(float xn, float yn, float x2n, float y2n, float Xn, float Yn, 
   return numerator/denominator;
 
 }
+
+
+float calc4_event_YZ(float QTx, float QTy, float QT2x, float QT2y, float MQT)
+{
+
+  float cn4 = ((QTx*QTx + QTy*QTy)*(QTx*QTx + QTy*QTy) + (QT2x*QT2x + QT2y*QT2y) -2*(QT2x*QTx*QTx + 2*QT2y*QTx*QTy - QT2x*QTy*QTy) -2*(2*(MQT-2)*(QTx*QTx + QTy*QTy) - MQT*(MQT-3)) )/ (MQT*(MQT-1)*(MQT-2)*(MQT-3));
+
+  return cn4;
+
+}
+
+
+float calc4_track_YZ(float pnx, float pny, float p2nx, float p2ny, float QTx, float QTy, float QT2x, float QT2y, float MQT)
+{
+
+  int mp = 1;
+
+  float dn4 = (((pnx*QTx + pny*QTy)*(QTx*QTx + QTy*QTy)) - (p2nx*QTx*QTx - p2nx*QTy*QTy + 2*p2ny*QTx*QTy)  - (pnx*QTx*QT2x - pny*QTy*QT2x + pnx*QTy*QT2y + pny*QTx*QT2y) - 2*MQT*(pnx*QTx + pny*QTy) - 2*mp*(QTx*QTx + QTy*QTy) + 7*(pnx*QTx + pny*QTy) - (QTx*pnx + QTy*pny) + (p2nx*QT2x + p2ny*QT2y) + 2*(pnx*QTx + pny*QTy) + 2*mp*MQT - 6*mp )/ (mp*(MQT-1)*(MQT-2)*(MQT-3));
+
+  return dn4;
+
+}
+
