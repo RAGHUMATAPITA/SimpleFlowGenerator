@@ -1,16 +1,29 @@
+void doit(const char*);
+
 void plot()
+{
+
+  doit("linear");
+  doit("flat");
+  doit("linearK");
+  doit("linearL");
+
+}
+
+void doit(const char *flag)
 {
 
   TCanvas *c1 = new TCanvas();
 
-  TFile *file = TFile::Open("out.root");
+  //TFile *file = TFile::Open("out.root");
+  TFile *file = TFile::Open(Form("out_%s.root",flag));
 
   TH1D *th1d_v2pT_true = ((TProfile *)file->Get("tp1d_v2pT_true"))->ProjectionX();
   TH1D *th1d_v2pT_reco = ((TProfile *)file->Get("tp1d_v2pT_reco"))->ProjectionX();
   TH1D *th1d_d2pT = ((TProfile *)file->Get("tp1d_d2pT"))->ProjectionX();
   TH1D *th1d_c2 = ((TProfile *)file->Get("tp1d_c2"))->ProjectionX();
 
-  th1d_v2pT_true->SetMaximum(0.2);
+  th1d_v2pT_true->SetMaximum(0.22);
   th1d_v2pT_true->SetMinimum(0.0);
   th1d_v2pT_true->GetYaxis()->SetTitle("v_{2}, various methods");
   th1d_v2pT_true->GetYaxis()->SetTitleOffset(1.2);
@@ -52,8 +65,8 @@ void plot()
   cout << sqrt(c2) << " " << pow(-c4YZ,0.25) << endl; // watch...
   // ---
 
-  //TLegend *leg = new TLegend(0.68,0.18,0.88,0.38);
-  TLegend *leg = new TLegend(0.18,0.68,0.38,0.88);
+  TLegend *leg = new TLegend(0.68,0.18,0.88,0.38);
+  //TLegend *leg = new TLegend(0.18,0.68,0.38,0.88);
   leg->AddEntry(th1d_v2pT_true,"truth","elp");
   leg->AddEntry(th1d_v2pT_reco,"v_{2}{#Psi_{2}}","elp");
   leg->AddEntry(th1d_d2pT,"v_{2}{2}","elp");
@@ -61,6 +74,6 @@ void plot()
   leg->SetTextSize(0.05);
   leg->Draw();
 
-  c1->Print("ohyeah.png");
+  c1->Print(Form("comparison_%s.png",flag));
 
 }
