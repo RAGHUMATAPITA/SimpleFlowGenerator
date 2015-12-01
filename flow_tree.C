@@ -20,7 +20,7 @@ double width = 0.5;
 int dostuff(const int, TTree*); // function prototype...
 
 
-const int maxmult = 100;
+const int maxmult = 400;
 
 int d_mult;
 float d_psi2;
@@ -29,7 +29,7 @@ float d_pt[maxmult];
 float d_phi[maxmult];
 
 TF1 *funpt;
-TF1 *funphi[maxmult];
+TF1 *funphi;
 
 
 int main()
@@ -38,15 +38,8 @@ int main()
   cout << "setting up functions" << endl;
 
   funpt = new TF1("funpt","TMath::Exp(-0.35*x)",0.0,2.0); // inverse slope param of 350 MeV
-
-  int number = maxmult;
-  for(int i=0; i<number; i++)
-    {
-      float pt = 2*i/number;
-      float v2 = 0.2*pt;
-      funphi[i] = new TF1("funphi","1 + 2*[0]*TMath::Cos(2*x - [1])",-TMath::Pi(),TMath::Pi());
-      funphi[i]->SetParameter(0,v2);
-    }
+  funphi = new TF1("funphi","1 + 2*[0]*TMath::Cos(2*x - [1])",-TMath::Pi(),TMath::Pi());
+  funphi->SetParameter(0,0.2);
 
   cout << "setting up tree " << endl;
 
@@ -93,10 +86,7 @@ int dostuff(const int number, TTree *tree)
   float psi2 = gRandom->Uniform(-TMath::Pi(),TMath::Pi()); // phi range for throw of psi2 for event
 
   //cout << "seting parameter for psi2" << endl;
-  for(int i=0; i<number; i++)
-    {
-      funphi[i]->SetParameter(1,psi2);
-    }
+  funphi->SetParameter(1,psi2);
 
   //cout << "main track loop" << endl;
   for(int i=0; i<number; i++)
@@ -107,10 +97,9 @@ int dostuff(const int number, TTree *tree)
 
       float pt = funpt->GetRandom();
 
-      float v2 = 0.2*pt; // v2 = 0.2 at 1 GeV
-      int ptbin = pt*number/2;
-      //cout << pt << " " << ptbin << endl;
-      float phi = funphi[ptbin]->GetRandom();
+      float v2 = 0.1*pt;
+      funphi->SetParameter(0,v2);
+      float phi = funphi->GetRandom();
       // ---
       d_charge[i] = charge;
       d_pt[i] = pt;
