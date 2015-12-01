@@ -102,6 +102,12 @@ int main(int argc, char *argv[])
   TProfile *tp1d_v2pT_true = new TProfile("tp1d_v2pT_true","",200,0,2,-1e10,1e10,"");
   TProfile *tp1d_v2pT_reco = new TProfile("tp1d_v2pT_reco","",200,0,2,-1e10,1e10,"");
 
+  TProfile *tp1d_d2pT = new TProfile("tp1d_d2pT","",200,0,2,-1e10,1e10,"");
+
+  TProfile *tp1d_c2 = new TProfile("tp1d_c2","",1,0,1000,-1e10,1e10,"");
+  TProfile *tp1d_c2mult = new TProfile("tp1d_c2mult","",1000,0,1000,-1e10,1e10,"");
+
+
   TH1D *th1d_psi2_reco = new TH1D("th1d_psi2_reco","",630,-3.2,3.2);
   TH1D *th1d_psi2_tmr = new TH1D("th1d_psi2_tmr","",630,-3.2,3.2);
 
@@ -156,17 +162,21 @@ int main(int argc, char *argv[])
       th1d_psi2->Fill(psi2true);
 
       // --- first track loop, q-vectors
-      double Q2x = 0;
-      double Q2y = 0;
+      float Q2x = 0;
+      float Q2y = 0;
       for(int itrk=0; itrk<mult; itrk++)
 	{
 	  float phi = d_phi[itrk];
 	  Q2x += cos(2*phi);
 	  Q2y += sin(2*phi);
 	} // End of track loop
-      float psi2reco = atan2(Q2x,Q2y);
+      float psi2reco = atan2(Q2y,Q2x);
       th1d_psi2_reco->Fill(psi2reco);
       th1d_psi2_tmr->Fill(psi2true-psi2reco);
+      float two = ( Q2x*Q2x + Q2y*Q2y ) / (mult*mult - mult);
+
+      tp1d_c2->Fill(1,two);
+      tp1d_c2mult->Fill(mult,two);
 
       for(int itrk=0; itrk<mult; itrk++)
 	{
@@ -179,6 +189,13 @@ int main(int argc, char *argv[])
 	  tp1d_v2pT_true->Fill(pt,v2_track_true);
 	  float v2_track_reco = cos(2*phi-psi2reco);
 	  tp1d_v2pT_reco->Fill(pt,v2_track_reco);
+
+	  float u2x = cos(2*phi);
+	  float u2y = sin(2*phi);
+
+	  float twoprime = ( u2x*Q2x + u2y*Q2y ) / (mult - 1);
+	  tp1d_d2pT->Fill(pt,twoprime);
+
 	  ntracks++; // count total number of tracks
 	} // End of track loop
 
