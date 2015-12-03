@@ -294,7 +294,7 @@ float calc4_track(float xn, float yn, float x2n, float y2n, float Xn, float Yn, 
   float eight = x2n*X2n + y2n*Y2n;
   float nine = 2*(xn*Xn + yn*Yn);
 
-  float numerator = one - two - three - four - five + six - seven + eight + nine -2*M - 6;
+  float numerator = one - two - three - four - five + six - seven + eight + nine +2*M - 6;
   float denominator = (M-1)*(M-2)*(M-3);
 
   return numerator/denominator;
@@ -317,7 +317,15 @@ float calc4_track_YZ(float pnx, float pny, float p2nx, float p2ny, float QTx, fl
 
   int mp = 1;
 
-  float dn4 = (((pnx*QTx + pny*QTy)*(QTx*QTx + QTy*QTy)) - (p2nx*QTx*QTx - p2nx*QTy*QTy + 2*p2ny*QTx*QTy)  - (pnx*QTx*QT2x - pny*QTy*QT2x + pnx*QTy*QT2y + pny*QTx*QT2y) - 2*MQT*(pnx*QTx + pny*QTy) - 2*mp*(QTx*QTx + QTy*QTy) + 7*(pnx*QTx + pny*QTy) - (QTx*pnx + QTy*pny) + (p2nx*QT2x + p2ny*QT2y) + 2*(pnx*QTx + pny*QTy) + 2*mp*MQT - 6*mp )/ (mp*(MQT-1)*(MQT-2)*(MQT-3));
+  float dn4 = (((pnx*QTx + pny*QTy)*(QTx*QTx + QTy*QTy)) -
+	       (p2nx*QTx*QTx - p2nx*QTy*QTy + 2*p2ny*QTx*QTy)  -
+	       (pnx*QTx*QT2x - pny*QTy*QT2x + pnx*QTy*QT2y + pny*QTx*QT2y) -
+	       2*MQT*(pnx*QTx + pny*QTy) -
+	       2*mp*(QTx*QTx + QTy*QTy) +
+	       7*(pnx*QTx + pny*QTy) -
+	       (QTx*pnx + QTy*pny) +
+	       (p2nx*QT2x + p2ny*QT2y) +
+	       2*(pnx*QTx + pny*QTy) + 2*mp*MQT - 6*mp ) / (mp*(MQT-1)*(MQT-2)*(MQT-3));
 
   return dn4;
 
