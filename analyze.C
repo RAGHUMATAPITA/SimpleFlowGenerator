@@ -114,8 +114,12 @@ int main(int argc, char *argv[])
   TProfile *tp1d_p4mult = new TProfile("tp1d_p4mult","",1000,0,1000,-1e10,1e10,"");
 
   TProfile *tp1d_YZ_p4pT = new TProfile("tp1d_YZ_p4pT","",20,0,2,-1e10,1e10,"");
+  TProfile *tp1d_YZ_W = new TProfile("tp1d_YZ_W","",20,0,2,-1e10,1e10,"");
   TProfile *tp1d_YZ_p4 = new TProfile("tp1d_YZ_p4","",1,0,1000,-1e10,1e10,"");
   TProfile *tp1d_YZ_p4mult = new TProfile("tp1d_YZ_p4mult","",1000,0,1000,-1e10,1e10,"");
+  TProfile *tp1d_YZ_d2pT = new TProfile("tp1d_YZ_d2pT","",20,0,2,-1e10,1e10,"");
+  TProfile *tp1d_YZ_v2pT_true = new TProfile("tp1d_YZ_v2pT_true","",20,0,2,-1e10,1e10,"");
+  TProfile *tp1d_YZ_v2pT_reco = new TProfile("tp1d_YZ_v2pT_reco","",20,0,2,-1e10,1e10,"");
 
 
   TH1D *th1d_psi2_reco = new TH1D("th1d_psi2_reco","",630,-3.2,3.2);
@@ -206,15 +210,19 @@ int main(int argc, char *argv[])
 	  th1d_phi->Fill(phi);
 	  th1d_pt->Fill(pt);
 	  float v2_track_true = cos(2*phi-psi2true);
-	  tp1d_v2pT_true->Fill(pt,v2_track_true);
 	  float v2_track_reco = cos(2*phi-psi2reco);
+	  tp1d_v2pT_true->Fill(pt,v2_track_true);
 	  tp1d_v2pT_reco->Fill(pt,v2_track_reco);
+	  tp1d_YZ_v2pT_true->Fill(pt,v2_track_true*pt);
+	  tp1d_YZ_v2pT_reco->Fill(pt,v2_track_reco*pt);
 
 	  float u2x = cos(2*phi);
 	  float u2y = sin(2*phi);
 
 	  float twoprime = ( u2x*Q2x + u2y*Q2y ) / (mult - 1);
 	  tp1d_d2pT->Fill(pt,twoprime);
+	  tp1d_YZ_d2pT->Fill(pt,twoprime*pt);
+	  tp1d_YZ_W->Fill(pt,pt);
 
 	  float u4x = cos(4*phi);
 	  float u4y = sin(4*phi);
@@ -223,7 +231,7 @@ int main(int argc, char *argv[])
 	  tp1d_p4pT->Fill(pt,fourprime);
 
 	  float fourprimeYZ = calc4_track_YZ(u2x,u2y,u4x,u4y,Q2x,Q2y,Q4x,Q4y,mult);
-	  tp1d_YZ_p4pT->Fill(pt,fourprimeYZ);
+	  tp1d_YZ_p4pT->Fill(pt,fourprimeYZ*pt);
 
 	  ntracks++; // count total number of tracks
 	} // End of track loop
@@ -263,36 +271,18 @@ float calc4_event(float Xn, float Yn, float X2n, float Y2n, float M)
 {
 
   float Qn2 = Xn*Xn+Yn*Yn;
-  float Q2n2 = X2n*X2n+Y2n*Y2n;
-  float Qn4 = Qn2*Qn2;
   float Qn2d = Xn*Xn-Yn*Yn;
 
-  float first = Qn4+Q2n2-(2*((X2n*Qn2d)+(2*Y2n*Xn*Yn)));
-  float second = 2*(2*(M-2)*Qn2)-(M*(M-3));
-
-  float W_4 = M*(M-1)*(M-2)*(M-3);
-
-
-  //cout << first << " " << second << endl;
-  // cout << Qn4 << " " << Q2n2 << " "
-  //   //<< (2*(X2n*Qn2d)) << " "
-  //      << (2*(X2n*Qn2d + 2*Y2n*Xn*Yn)) << " "
-  //      << 2*(2*(M-2)*Qn2) << " " << (M*(M-3)) << endl;
-
-
-  //return (Qn4 + Q2n2 - (2*(X2n*Qn2d + 2*Y2n*Xn*Yn)) - 2*(2*(M-2)*Qn2) - (M*(M-3)) ) / W_4;
-
-  //return (first-second)/W_4;
-
-  float one   = Qn4;
-  float two   = Q2n2;
+  float one   = Qn2*Qn2;
+  float two   = X2n*X2n+Y2n*Y2n;
   float three = (2*(X2n*Qn2d + 2*Y2n*Xn*Yn));
   float four  = 2*(2*(M-2)*Qn2);
   float five  = 2*M*(M-3);
 
-  //cout << one << " " << two << " " << three << " " << four << " " << five << endl;
+  float numerator = one + two - three - four + five;
+  float denominator = M*(M-1)*(M-2)*(M-3);
 
-  return (one + two - three - four + five)/W_4;
+  return numerator/denominator;
 
 }
 
@@ -301,23 +291,18 @@ float calc4_event(float Xn, float Yn, float X2n, float Y2n, float M)
 float calc4_track(float xn, float yn, float x2n, float y2n, float Xn, float Yn, float X2n, float Y2n, float M)
 {
 
-  // --- this code based on a simplified version of the analytical expression
-  // --- this code obviously has enormous room for improvement and cleanup, which is welcomed
-  // --- also it is not clear if this code works correctly, but I think it doesn't
-  float one   = (xn*Xn + yn*Yn)*(Xn*Xn + Yn*Yn); // check 1 good
-  float two   = x2n*Xn*Xn - x2n*Yn*Yn + 2*y2n*Xn*Yn; // check 1 good
-  float three = xn*Xn*X2n + xn*Yn*Y2n - yn*(X2n*Yn - Xn*Y2n); // check 1 good (confusing...)
-  float four  = 2*M*(xn*Xn + yn*Yn); // check 1 good
-  float five  = 2*(Xn*Xn + Yn*Yn); // check 1 good
-  float six   = 7*(xn*Xn + yn*Yn); // check 1 good
-  float seven = xn*Xn + yn*Yn; // check 1 good
-  float eight = x2n*X2n + y2n*Y2n; // check 1 good
-  float nine = 2*(xn*Xn + yn*Yn); // check 1 good
+  float one   = (xn*Xn + yn*Yn)*(Xn*Xn + Yn*Yn);
+  float two   = x2n*Xn*Xn - x2n*Yn*Yn + 2*y2n*Xn*Yn;
+  float three = xn*Xn*X2n + xn*Yn*Y2n - yn*(X2n*Yn - Xn*Y2n);
+  float four  = 2*M*(xn*Xn + yn*Yn);
+  float five  = 2*(Xn*Xn + Yn*Yn);
+  float six   = 7*(xn*Xn + yn*Yn);
+  float seven = xn*Xn + yn*Yn;
+  float eight = x2n*X2n + y2n*Y2n;
+  float nine = 2*(xn*Xn + yn*Yn);
 
   float numerator = one - two - three - four - five + six - seven + eight + nine +2*M - 6;
   float denominator = (M-1)*(M-2)*(M-3);
-
-  // cout << one << " " << two << " " << three << " " << four << " " << five << " " << six << " " << seven << " " << eight << " " << nine << endl;
 
   return numerator/denominator;
 
@@ -328,36 +313,13 @@ float calc4_track(float xn, float yn, float x2n, float y2n, float Xn, float Yn, 
 float calc4_event_YZ(float QTx, float QTy, float QT2x, float QT2y, float MQT)
 {
 
-  // float cn4 = ((QTx*QTx + QTy*QTy)*(QTx*QTx + QTy*QTy) +
-  // 	       (QT2x*QT2x + QT2y*QT2y) -
-  // 	       2*(QT2x*QTx*QTx + 2*QT2y*QTx*QTy - QT2x*QTy*QTy) -
-  // 	       2*(2*(MQT-2)*(QTx*QTx + QTy*QTy) - MQT*(MQT-3)) ) / (MQT*(MQT-1)*(MQT-2)*(MQT-3));
-
-  float cn4 = ((QTx*QTx + QTy*QTy)*(QTx*QTx + QTy*QTy) + (QT2x*QT2x + QT2y*QT2y) -2*(QT2x*QTx*QTx + 2*QT2y*QTx*QTy - QT2x*QTy*QTy) -2*(2*(MQT-2)*(QTx*QTx + QTy*QTy) - MQT*(MQT-3)) )/ (MQT*(MQT-1)*(MQT-2)*(MQT-3));
-
-  float first = (QTx*QTx + QTy*QTy)*(QTx*QTx + QTy*QTy) +
-    (QT2x*QT2x + QT2y*QT2y) -
-    2*(QT2x*QTx*QTx + 2*QT2y*QTx*QTy - QT2x*QTy*QTy);
-  float second =  2*(2*(MQT-2)*(QTx*QTx + QTy*QTy) - MQT*(MQT-3)) ;
-
-  float W_4 = (MQT*(MQT-1)*(MQT-2)*(MQT-3));
-
-  //float cn4 = (first-second)/W_4;
-
   float one   = (QTx*QTx + QTy*QTy)*(QTx*QTx + QTy*QTy);
   float two   = (QT2x*QT2x + QT2y*QT2y);
   float three = 2*(QT2x*QTx*QTx + 2*QT2y*QTx*QTy - QT2x*QTy*QTy);
   float four  = 2*(2*(MQT-2)*(QTx*QTx + QTy*QTy));
   float five  = 2*MQT*(MQT-3);
 
-  //cout << first << " " << second << endl;
-  // cout << (QTx*QTx + QTy*QTy)*(QTx*QTx + QTy*QTy) << " " << (QT2x*QT2x + QT2y*QT2y) << " "
-  //      << 2*(QT2x*QTx*QTx + 2*QT2y*QTx*QTy - QT2x*QTy*QTy)
-  //      << " " << 2*(2*(MQT-2)*(QTx*QTx + QTy*QTy)) << " " << MQT*(MQT-3) << endl;
-
-  //cout << one << " " << two << " " << three << " " << four << " " << five << endl;
-
-  //cout << cn4 << " " << (one + two - three - four + five)/W_4 << endl;
+  float cn4 = (one + two - three - four + five) / (MQT*(MQT-1)*(MQT-2)*(MQT-3));
 
   return cn4;
 
@@ -381,20 +343,6 @@ float calc4_track_YZ(float pnx, float pny, float p2nx, float p2ny, float QTx, fl
 
   float dn4 = (one - two - three - four - five + six - seven + eight + nine + 2*mp*MQT - 6*mp) / (mp*(MQT-1)*(MQT-2)*(MQT-3));
 
-  // float dn4 = (((pnx*QTx + pny*QTy)*(QTx*QTx + QTy*QTy)) - // minus 2
-  // 	       (p2nx*QTx*QTx - p2nx*QTy*QTy + 2*p2ny*QTx*QTy)  - // minus 3
-  // 	       (pnx*QTx*QT2x - pny*QTy*QT2x + pnx*QTy*QT2y + pny*QTx*QT2y) - // minus 4
-  // 	       2*MQT*(pnx*QTx + pny*QTy) - // minus 5
-  // 	       2*mp*(QTx*QTx + QTy*QTy) + // plus 6
-  // 	       7*(pnx*QTx + pny*QTy) - // minus 7
-  // 	       (QTx*pnx + QTy*pny) + // plus 8
-  // 	       (p2nx*QT2x + p2ny*QT2y) + // plus 9
-  // 	       2*(pnx*QTx + pny*QTy) + 2*mp*MQT - 6*mp ) / (mp*(MQT-1)*(MQT-2)*(MQT-3));
-
-  // cout << one << " " << two << " " << three << " " << four << " " << five << " " << six << " " << seven << " " << eight << " " << nine << endl;
-
   return dn4;
 
 }
-
-
