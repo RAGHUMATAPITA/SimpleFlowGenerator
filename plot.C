@@ -22,6 +22,7 @@ void doit(const char *flag)
   TH1D *th1d_v2pT_reco = ((TProfile *)file->Get("tp1d_v2pT_reco"))->ProjectionX();
   TH1D *th1d_d2pT = ((TProfile *)file->Get("tp1d_d2pT"))->ProjectionX();
   TH1D *th1d_c2 = ((TProfile *)file->Get("tp1d_c2"))->ProjectionX();
+  TH1D *helper = (TH1D *)th1d_d2pT->Clone();
 
   th1d_v2pT_true->SetMaximum(0.22);
   th1d_v2pT_true->SetMinimum(0.0);
@@ -38,16 +39,20 @@ void doit(const char *flag)
   th1d_d2pT->Scale(1.0/sqrt(c2));
   th1d_d2pT->SetLineColor(kBlue);
   th1d_d2pT->Draw("same");
+  helper->Scale(2*c2);
 
   // ---
   TH1D *th1d_p4pT = ((TProfile *)file->Get("tp1d_p4pT"))->ProjectionX();
   TH1D *th1d_p4 = ((TProfile *)file->Get("tp1d_p4"))->ProjectionX();
+  th1d_p4pT->Add(helper,-1.0);
+  th1d_p4pT->Scale(-1.0);
   float p4 = th1d_p4->GetBinContent(1);
   float c4 = p4 - 2.0*c2*c2;
   if(c4>0){cout << "LOLOMGWTF" << endl; c4 *= -1;}
   float k4 = pow(-c4,0.75);
   th1d_p4pT->Scale(1.0/k4);
   th1d_p4pT->SetLineColor(kGreen+2);
+  th1d_p4pT->SetLineWidth(2);
   th1d_p4pT->Draw("same");
   cout << sqrt(c2) << " " << pow(-c4,0.25) << endl;
   // ---
@@ -55,6 +60,8 @@ void doit(const char *flag)
   // ---
   TH1D *th1d_YZ_p4pT = ((TProfile *)file->Get("tp1d_YZ_p4pT"))->ProjectionX();
   TH1D *th1d_YZ_p4 = ((TProfile *)file->Get("tp1d_YZ_p4"))->ProjectionX();
+  th1d_YZ_p4pT->Add(helper,-1.0);
+  th1d_YZ_p4pT->Scale(-1.0);
   float p4YZ = th1d_YZ_p4->GetBinContent(1);
   float c4YZ = p4YZ - 2.0*c2*c2;
   if(c4>0){cout << "LOLOMGWTF" << endl; c4 *= -1;}
