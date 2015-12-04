@@ -28,6 +28,7 @@ float d_phi[maxmult];
 
 TF1 *funpt;
 TF1 *funphi;
+TF1 *funphiarray[maxmult];
 
 
 int main()
@@ -37,6 +38,7 @@ int main()
 
   funpt = new TF1("funpt","TMath::Exp(-0.35*x)",0.0,2.0); // inverse slope param of 350 MeV
   funphi = new TF1("funphi","1 + 2*[0]*TMath::Cos(2*x - [1])",-TMath::Pi(),TMath::Pi());
+  funphi->SetParameter(1,0.0);
   funphi->SetParameter(0,0.2);
 
   cout << "setting up tree " << endl;
@@ -82,10 +84,10 @@ int main()
 int dostuff(const int number, TTree *tree)
 {
 
-  float psi2 = gRandom->Uniform(-TMath::Pi(),TMath::Pi()); // phi range for throw of psi2 for event
+  //float psi2 = gRandom->Uniform(-TMath::Pi(),TMath::Pi()); // phi range for throw of psi2 for event
 
   //cout << "seting parameter for psi2" << endl;
-  funphi->SetParameter(1,psi2);
+  //funphi->SetParameter(1,psi2);
 
   //cout << "main track loop" << endl;
   for(int i=0; i<number; i++)
