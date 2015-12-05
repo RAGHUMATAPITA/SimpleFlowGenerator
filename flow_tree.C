@@ -18,17 +18,21 @@ using namespace std;
 int dostuff(const int, TTree*); // function prototype...
 
 
+const double pi = TMath::Pi();
+
 const int maxmult = 400;
+const int nptbins = 100;
 
 int d_mult;
 float d_psi2;
 int d_charge[maxmult];
+float d_v2[maxmult];
 float d_pt[maxmult];
 float d_phi[maxmult];
 
 TF1 *funpt;
 TF1 *funphi;
-TF1 *funphiarray[maxmult];
+TF1 *funphiarray[nptbins];
 
 
 int main()
@@ -37,9 +41,17 @@ int main()
   cout << "setting up functions" << endl;
 
   funpt = new TF1("funpt","TMath::Exp(-0.35*x)",0.0,2.0); // inverse slope param of 350 MeV
-  funphi = new TF1("funphi","1 + 2*[0]*TMath::Cos(2*x - [1])",-TMath::Pi(),TMath::Pi());
-  funphi->SetParameter(1,0.0);
+  funphi = new TF1("funphi","1 + 2*[0]*TMath::Cos(2*x)",-pi,pi);
   funphi->SetParameter(0,0.2);
+
+  for(int i=0; i<nptbins; i++)
+    {
+      float pt = 2.0*i/float(nptbins);
+      float v2 = 0.1*pt;
+      funphiarray[i] = new TF1("funphi","1 + 2*[0]*TMath::Cos(2*x)",-pi,pi);
+      funphiarray[i]->SetParameter(0,v2);
+    }
+
 
   cout << "setting up tree " << endl;
 
@@ -52,6 +64,7 @@ int main()
   tree->Branch("mult",&d_mult,"mult/I");
   tree->Branch("psi2",&d_psi2,"psi2/F");
   tree->Branch("charge",d_charge,"charge[mult]/I");
+  tree->Branch("v2",d_v2,"v2[mult]/F");
   tree->Branch("pt",d_pt,"pt[mult]/F");
   tree->Branch("phi",d_phi,"phi[mult]/F");
 
@@ -84,7 +97,8 @@ int main()
 int dostuff(const int number, TTree *tree)
 {
 
-  //float psi2 = gRandom->Uniform(-TMath::Pi(),TMath::Pi()); // phi range for throw of psi2 for event
+  float psi2 = gRandom->Uniform(-pi,pi); // phi range for throw of psi2 for event
+  //float psi2 = 0;
 
   //cout << "seting parameter for psi2" << endl;
   //funphi->SetParameter(1,psi2);
@@ -100,9 +114,19 @@ int dostuff(const int number, TTree *tree)
 
       float v2 = 0.1*pt;
       //funphi->SetParameter(0,v2);
-      float phi = funphi->GetRandom();
+      int ptbin = pt*nptbins/2;
+      float phi = funphiarray[ptbin]->GetRandom();
+      // --- for some reason this isn't working correctly...
+      //phi -= psi2; // no?
+      phi += psi2; // no?
+      if(phi>pi) phi -= 2*pi;
+      if(phi<-pi) phi += 2*pi;
+      // ---------------------------------------------------
+      //cout << pt << " " << ptbin << endl;
+      //cout << funphiarray[ptbin]->GetParameter(0) << endl;
       // ---
       d_charge[i] = charge;
+      d_v2[i] = v2;
       d_pt[i] = pt;
       d_phi[i] = phi;
     }
