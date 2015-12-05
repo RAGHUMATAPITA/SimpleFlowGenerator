@@ -98,12 +98,7 @@ int dostuff(const int number, TTree *tree)
 {
 
   float psi2 = gRandom->Uniform(-pi,pi); // phi range for throw of psi2 for event
-  //float psi2 = 0;
 
-  //cout << "seting parameter for psi2" << endl;
-  //funphi->SetParameter(1,psi2);
-
-  //cout << "main track loop" << endl;
   for(int i=0; i<number; i++)
     {
       int charge = -1;
@@ -116,9 +111,7 @@ int dostuff(const int number, TTree *tree)
       //funphi->SetParameter(0,v2);
       int ptbin = pt*nptbins/2;
       float phi = funphiarray[ptbin]->GetRandom();
-      // --- for some reason this isn't working correctly...
-      //phi -= psi2; // no?
-      phi += psi2; // no?
+      phi += psi2;
       if(phi>pi) phi -= 2*pi;
       if(phi<-pi) phi += 2*pi;
       // ---------------------------------------------------
