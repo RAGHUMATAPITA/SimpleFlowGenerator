@@ -31,11 +31,13 @@ int d_mult;
 float d_psi2;
 int d_charge[maxn];
 float d_pt[maxn];
+float d_v2[maxn];
 float d_phi[maxn];
 
 TBranch *b_mult;
 TBranch *b_psi2;
 TBranch *b_charge;
+TBranch *b_v2;
 TBranch *b_pt;
 TBranch *b_phi;
 
@@ -102,6 +104,7 @@ int main(int argc, char *argv[])
   TH1D *th1d_pt = new TH1D("th1d_pt","",200,0,2);
   TH1D *th1d_phi = new TH1D("th1d_phi","",630,-3.2,3.2);
 
+  TProfile *tp1d_v2pT_pure = new TProfile("tp1d_v2pT_pure","",20,0,2,-1e10,1e10,"");
   TProfile *tp1d_v2pT_true = new TProfile("tp1d_v2pT_true","",20,0,2,-1e10,1e10,"");
   TProfile *tp1d_v2pT_reco = new TProfile("tp1d_v2pT_reco","",20,0,2,-1e10,1e10,"");
 
@@ -124,6 +127,7 @@ int main(int argc, char *argv[])
 
   TH1D *th1d_psi2_reco = new TH1D("th1d_psi2_reco","",630,-3.2,3.2);
   TH1D *th1d_psi2_tmr = new TH1D("th1d_psi2_tmr","",630,-3.2,3.2);
+  TProfile *tp1d_psi2_tmr = new TProfile("tp1d_psi2_tmr","",1,-3.2,3.2);
 
 
   // --- Done with Histograms ---------------------
@@ -154,6 +158,8 @@ int main(int argc, char *argv[])
   b_phi->SetAddress(d_phi);
   b_pt = tree->GetBranch("pt");
   b_pt->SetAddress(d_pt);
+  b_v2 = tree->GetBranch("v2");
+  b_v2->SetAddress(d_v2);
 
 
   int nevt = (int)tree->GetEntries(); // number of events in tree
@@ -180,6 +186,10 @@ int main(int argc, char *argv[])
       float Q2y = 0;
       float Q4x = 0;
       float Q4y = 0;
+      float Q2x_sub = 0;
+      float Q2y_sub = 0;
+      float Q4x_sub = 0;
+      float Q4y_sub = 0;
       for(int itrk=0; itrk<mult; itrk++)
 	{
 	  float phi = d_phi[itrk];
@@ -187,11 +197,18 @@ int main(int argc, char *argv[])
 	  Q2y += sin(2*phi);
 	  Q4x += cos(4*phi);
 	  Q4y += sin(4*phi);
+	  if(itrk>mult/2) continue; // cheap and easy way of making subevents...
+	  Q2x_sub += cos(2*phi);
+	  Q2y_sub += sin(2*phi);
+	  Q4x_sub += cos(4*phi);
+	  Q4y_sub += sin(4*phi);
 	} // End of track loop
-      float psi2reco = atan2(Q2y,Q2x);
+      //float psi2reco = atan2(Q2y,Q2x);
+      float psi2reco = atan2(Q2y_sub,Q2x_sub)/2;
       th1d_psi2_reco->Fill(psi2reco);
-      th1d_psi2_tmr->Fill(psi2true-psi2reco);
-      float two = ( Q2x*Q2x + Q2y*Q2y ) / (mult*mult - mult);
+      th1d_psi2_tmr->Fill(cos(2*(psi2true-psi2reco)));
+      tp1d_psi2_tmr->Fill(1,cos(2*(psi2true-psi2reco)));
+      float two = ( Q2x*Q2x + Q2y*Q2y - mult) / (mult*mult - mult);
       float four = calc4_event(Q2x,Q2y,Q4x,Q4y,mult);
       float fourYZ = calc4_event_YZ(Q2x,Q2y,Q4x,Q4y,mult);
 
@@ -207,19 +224,21 @@ int main(int argc, char *argv[])
 	  int charge = d_charge[itrk];
 	  float phi = d_phi[itrk];
 	  float pt = d_pt[itrk];
+	  float v2 = d_v2[itrk];
 	  th1d_phi->Fill(phi);
 	  th1d_pt->Fill(pt);
-	  float v2_track_true = cos(2*phi-psi2true);
-	  float v2_track_reco = cos(2*phi-psi2reco);
+	  float v2_track_true = cos(2*phi-2*psi2true);
+	  float v2_track_reco = cos(2*phi-2*psi2reco);
 	  tp1d_v2pT_true->Fill(pt,v2_track_true);
-	  tp1d_v2pT_reco->Fill(pt,v2_track_reco);
+	  if(itrk>mult/2) tp1d_v2pT_reco->Fill(pt,v2_track_reco); // cheap and easy way of making subevents
+	  tp1d_v2pT_pure->Fill(pt,v2);
 	  tp1d_YZ_v2pT_true->Fill(pt,v2_track_true*pt);
 	  tp1d_YZ_v2pT_reco->Fill(pt,v2_track_reco*pt);
 
 	  float u2x = cos(2*phi);
 	  float u2y = sin(2*phi);
 
-	  float twoprime = ( u2x*Q2x + u2y*Q2y ) / (mult - 1);
+	  float twoprime = ( u2x*Q2x + u2y*Q2y - 1) / (mult - 1);
 	  tp1d_d2pT->Fill(pt,twoprime);
 	  tp1d_YZ_d2pT->Fill(pt,twoprime*pt);
 	  tp1d_YZ_W->Fill(pt,pt);
