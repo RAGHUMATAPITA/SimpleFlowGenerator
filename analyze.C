@@ -58,6 +58,9 @@ int main(int argc, char *argv[])
   char inFile[100];
   char outFile[100];
 
+  char c_offset[100];
+  float offset = 0;
+
   if(argc==1)
     {
       cout<<"Now beginning program"<<endl;
@@ -77,6 +80,19 @@ int main(int argc, char *argv[])
       cout<<"Program name is "<<argv[0]<<endl;
       cout<<"Input file is "<<inFile<<endl;
       cout<<"Output file is "<<outFile<<endl;
+    }
+  else if(argc==4)
+    {
+      strcpy(inFile,argv[1]);
+      strcpy(outFile,argv[2]);
+      strcpy(c_offset,argv[3]);
+      cout<<"Now beginning program"<<endl;
+      cout<<"Program name is "<<argv[0]<<endl;
+      cout<<"Input file is "<<inFile<<endl;
+      cout<<"Output file is "<<outFile<<endl;
+      string s_offset(c_offset);
+      offset = stof(s_offset);
+      cout << "Numerical offset is " << offset << endl;
     }
   else
     {
@@ -107,6 +123,9 @@ int main(int argc, char *argv[])
   TProfile *tp1d_v2pT_pure = new TProfile("tp1d_v2pT_pure","",20,0,2,-1e10,1e10,"");
   TProfile *tp1d_v2pT_true = new TProfile("tp1d_v2pT_true","",20,0,2,-1e10,1e10,"");
   TProfile *tp1d_v2pT_reco = new TProfile("tp1d_v2pT_reco","",20,0,2,-1e10,1e10,"");
+  TProfile *tp1d_v2pT_prim = new TProfile("tp1d_v2pT_prim","",20,0,2,-1e10,1e10,"");
+  TProfile *tp1d_v2pT_primereco = new TProfile("tp1d_v2pT_primereco","",20,0,2,-1e10,1e10,"");
+  TProfile *tp1d_v2pT_doubleprimereco = new TProfile("tp1d_v2pT_doubleprimereco","",20,0,2,-1e10,1e10,"");
 
   TProfile *tp1d_d2pT = new TProfile("tp1d_d2pT","",20,0,2,-1e10,1e10,"");
   TProfile *tp1d_c2 = new TProfile("tp1d_c2","",1,0,1000,-1e10,1e10,"");
@@ -128,6 +147,10 @@ int main(int argc, char *argv[])
   TH1D *th1d_psi2_reco = new TH1D("th1d_psi2_reco","",630,-3.2,3.2);
   TH1D *th1d_psi2_tmr = new TH1D("th1d_psi2_tmr","",630,-3.2,3.2);
   TProfile *tp1d_psi2_tmr = new TProfile("tp1d_psi2_tmr","",1,-3.2,3.2);
+
+  TH1D *th1d_psi2prime_reco = new TH1D("th1d_psi2prime_reco","",630,-3.2,3.2);
+  TH1D *th1d_psi2prime_tmr = new TH1D("th1d_psi2prime_tmr","",630,-3.2,3.2);
+  TProfile *tp1d_psi2prime_tmr = new TProfile("tp1d_psi2prime_tmr","",1,-3.2,3.2);
 
 
   // --- Done with Histograms ---------------------
@@ -190,24 +213,51 @@ int main(int argc, char *argv[])
       float Q2y_sub = 0;
       float Q4x_sub = 0;
       float Q4y_sub = 0;
+      float Q2xprime = 0;
+      float Q2yprime = 0;
+      float Q4xprime = 0;
+      float Q4yprime = 0;
+      float Q2x_subprime = 0;
+      float Q2y_subprime = 0;
+      float Q4x_subprime = 0;
+      float Q4y_subprime = 0;
       for(int itrk=0; itrk<mult; itrk++)
 	{
 	  float phi = d_phi[itrk];
+	  float x  = cos(phi);
+	  float y  = sin(phi);
+	  float xoff = offset;
+	  float yoff = offset;
+	  float xprime = x - xoff;
+	  float yprime = y - yoff;
+	  float phiprime = atan2(yprime,xprime);
 	  Q2x += cos(2*phi);
 	  Q2y += sin(2*phi);
 	  Q4x += cos(4*phi);
 	  Q4y += sin(4*phi);
-	  if(itrk>mult/2) continue; // cheap and easy way of making subevents...
+	  Q2xprime += cos(2*phiprime);
+	  Q2yprime += sin(2*phiprime);
+	  Q4xprime += cos(4*phiprime);
+	  Q4yprime += sin(4*phiprime);
+	  if(itrk>mult/2) continue;
 	  Q2x_sub += cos(2*phi);
 	  Q2y_sub += sin(2*phi);
 	  Q4x_sub += cos(4*phi);
 	  Q4y_sub += sin(4*phi);
+	  Q2x_subprime += cos(2*phiprime);
+	  Q2y_subprime += sin(2*phiprime);
+	  Q4x_subprime += cos(4*phiprime);
+	  Q4y_subprime += sin(4*phiprime);
 	} // End of track loop
       //float psi2reco = atan2(Q2y,Q2x);
       float psi2reco = atan2(Q2y_sub,Q2x_sub)/2;
       th1d_psi2_reco->Fill(psi2reco);
       th1d_psi2_tmr->Fill(cos(2*(psi2true-psi2reco)));
       tp1d_psi2_tmr->Fill(1,cos(2*(psi2true-psi2reco)));
+      float psi2primereco = atan2(Q2y_subprime,Q2x_subprime)/2;
+      th1d_psi2prime_reco->Fill(psi2primereco);
+      th1d_psi2prime_tmr->Fill(cos(2*(psi2true-psi2primereco)));
+      tp1d_psi2prime_tmr->Fill(1,cos(2*(psi2true-psi2primereco)));
       float two = ( Q2x*Q2x + Q2y*Q2y - mult) / (mult*mult - mult);
       float four = calc4_event(Q2x,Q2y,Q4x,Q4y,mult);
       float fourYZ = calc4_event_YZ(Q2x,Q2y,Q4x,Q4y,mult);
@@ -230,10 +280,27 @@ int main(int argc, char *argv[])
 	  float v2_track_true = cos(2*phi-2*psi2true);
 	  float v2_track_reco = cos(2*phi-2*psi2reco);
 	  tp1d_v2pT_true->Fill(pt,v2_track_true);
-	  if(itrk>mult/2) tp1d_v2pT_reco->Fill(pt,v2_track_reco); // cheap and easy way of making subevents
+	  if(itrk>mult/2) tp1d_v2pT_reco->Fill(pt,v2_track_reco);
 	  tp1d_v2pT_pure->Fill(pt,v2);
 	  tp1d_YZ_v2pT_true->Fill(pt,v2_track_true*pt);
 	  tp1d_YZ_v2pT_reco->Fill(pt,v2_track_reco*pt);
+
+	  float x  = cos(phi);
+	  float y  = sin(phi);
+	  float xoff = offset;
+	  float yoff = offset;
+	  float xprime = x - xoff;
+	  float yprime = y - yoff;
+	  float phiprime = atan2(yprime,xprime);
+
+	  float v2_primetrack_reco = cos(2*phiprime-2*psi2reco);
+	  if(itrk>mult/2) tp1d_v2pT_prim->Fill(pt,v2_primetrack_reco);
+
+	  float v2_track_primereco = cos(2*phi-2*psi2primereco);
+	  if(itrk>mult/2) tp1d_v2pT_primereco->Fill(pt,v2_track_primereco);
+
+	  float v2_track_doubleprimereco = cos(2*phiprime-2*psi2primereco);
+	  if(itrk>mult/2) tp1d_v2pT_doubleprimereco->Fill(pt,v2_track_doubleprimereco);
 
 	  float u2x = cos(2*phi);
 	  float u2y = sin(2*phi);
