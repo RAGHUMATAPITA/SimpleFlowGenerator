@@ -1,0 +1,8 @@
+compile.sh is used to compile flow_tree.C and analyze.C
+
+flow_tree.C is used to generate trees with flow data---the number of events and particles can be adjusted within the code
+
+analyze.C is used to analyze the trees and produce histograms
+
+plot.C and plot_prime.C are used to analyze the histograms to make plots
+
