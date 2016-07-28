@@ -16,6 +16,7 @@
 #include "TH1.h"
 #include "TH2.h"
 #include "TProfile.h"
+#include "TMath.h"
 
 using namespace std;
 
@@ -23,6 +24,9 @@ using namespace std;
 
 Long64_t nevents = 0;
 Long64_t ntracks = 0;
+
+
+const float twopi = 2*TMath::Pi();
 
 
 const int maxn = 5000;
@@ -144,13 +148,13 @@ int main(int argc, char *argv[])
   TProfile *tp1d_YZ_v2pT_reco = new TProfile("tp1d_YZ_v2pT_reco","",20,0,2,-1e10,1e10,"");
 
 
-  TH1D *th1d_psi2_reco = new TH1D("th1d_psi2_reco","",630,-3.2,3.2);
-  TH1D *th1d_psi2_tmr = new TH1D("th1d_psi2_tmr","",630,-3.2,3.2);
-  TProfile *tp1d_psi2_tmr = new TProfile("tp1d_psi2_tmr","",1,-3.2,3.2);
+  TH1D *th1d_psi2_reco = new TH1D("th1d_psi2_reco","",100,-twopi,twopi);
+  TH1D *th1d_psi2_tmr = new TH1D("th1d_psi2_tmr","",100,-twopi,twopi);
+  TProfile *tp1d_psi2_tmr = new TProfile("tp1d_psi2_tmr","",1,-twopi,twopi);
 
-  TH1D *th1d_psi2prime_reco = new TH1D("th1d_psi2prime_reco","",630,-3.2,3.2);
-  TH1D *th1d_psi2prime_tmr = new TH1D("th1d_psi2prime_tmr","",630,-3.2,3.2);
-  TProfile *tp1d_psi2prime_tmr = new TProfile("tp1d_psi2prime_tmr","",1,-3.2,3.2);
+  TH1D *th1d_psi2prime_reco = new TH1D("th1d_psi2prime_reco","",100,-twopi,twopi);
+  TH1D *th1d_psi2prime_tmr = new TH1D("th1d_psi2prime_tmr","",100,-twopi,twopi);
+  TProfile *tp1d_psi2prime_tmr = new TProfile("tp1d_psi2prime_tmr","",1,-twopi,twopi);
 
 
   // --- Done with Histograms ---------------------
