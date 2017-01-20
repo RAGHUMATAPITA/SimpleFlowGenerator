@@ -145,6 +145,19 @@ struct SetList {
 // Variables
 //-------------------------------------
 
+//Number of particles per event
+const int MULT = 100;
+
+//Set verbosity on or off
+bool verbosity = false;
+
+//TProfile to take the average of the cumulants over many events
+TProfile *avgCumulant;
+
+TProfile *f1;
+TProfile *f2;
+TProfile *f3;
+
 //Vector to store the partitions of a given set, where each partition is a SetList object
 vector<SetList> setPartitions;
 
@@ -191,6 +204,12 @@ void initializeHistograms()
 		ComplexAverage ca;
 		mapParticleComboComplex[setIndex] = ca;
 	}
+
+	//Initialize TProfile to take the average cumulant over many events
+	avgCumulant = new TProfile("avgCumulant", "avgCumulant", 1, -1000, 1000);
+	f1 = new TProfile("f1", "f1", 1, -1000, 1000);
+	f2 = new TProfile("f2", "f2", 1, -1000, 1000);
+	f3 = new TProfile("f3", "f3", 1, -1000, 1000);
 }
 
 /*
@@ -446,10 +465,13 @@ void computeKCumulant()
 		float factor1 = TMath::Factorial(TMath::Abs(numParts) - 1);
 		float factor2 = TMath::Power(-1.0, TMath::Abs(numParts) - 1);
 
-		cout << "--> Partition " << p << ":" << endl;
-		partition.printList();
-		cout << "     Factor1 = " << factor1 << endl;
-		cout << "     Factor2 = " << factor2 << endl;
+		if (verbosity)
+		{
+			cout << "--> Partition " << p << ":" << endl;
+			partition.printList();
+			cout << "     Factor1 = " << factor1 << endl;
+			cout << "     Factor2 = " << factor2 << endl;
+		}
 
 		//Now loop over all blocks (i.e., sets) in the current partition
 		float factor3 = 1.0;
@@ -463,13 +485,13 @@ void computeKCumulant()
 			factor3 = factor3 * mapParticleComboHisto[blockIndex]->GetMean();
 		}
 
-		cout << "     Factor3 = " << factor3 << endl << endl;
+		if (verbosity) cout << "     Factor3 = " << factor3 << endl << endl;
 
 
 		cumulant = cumulant + factor1 * factor2 * factor3;
 	}
 
-	cout << "CUMULANT = " << cumulant << endl;
+	if (verbosity) cout << "CUMULANT = " << cumulant << endl;
 }
 
 
@@ -496,10 +518,13 @@ void computeComplexKCumulant()
 		float factor1 = TMath::Factorial(TMath::Abs(numParts) - 1);
 		float factor2 = TMath::Power(-1.0, TMath::Abs(numParts) - 1);
 
-		cout << "--> Partition " << p << ":" << endl;
-		partition.printList();
-		cout << "     Factor1 = " << factor1 << endl;
-		cout << "     Factor2 = " << factor2 << endl;
+		if (verbosity)
+		{
+			cout << "--> Partition " << p << ":" << endl;
+			partition.printList();
+			cout << "     Factor1 = " << factor1 << endl;
+			cout << "     Factor2 = " << factor2 << endl;
+		}
 
 		//Now loop over all blocks (i.e., sets) in the current partition
 		float factor3 = 1.0;
@@ -513,30 +538,30 @@ void computeComplexKCumulant()
 			factor3 = factor3 * mapParticleComboComplex[blockIndex].getAverageReal();
 		}
 
-		cout << "     Factor3 = " << factor3 << endl << endl;
+		if (verbosity) cout << "     Factor3 = " << factor3 << endl << endl;
 
 
 		cumulant = cumulant + factor1 * factor2 * factor3;
 	}
 
-	cout << "CUMULANT = " << cumulant << endl;
+	if (verbosity) cout << "CUMULANT = " << cumulant << endl;
+
+	avgCumulant->Fill(cumulant, 1);
 }
 
 
 /*
- * 
+ *
  */
-void runEvent2PC(float phi)
+void runEvent2PC(std::vector<float> phi)
 {
-	//cout << phi[0] << endl;
-	/*
 	TComplex phipair[2];
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < MULT; i++)
 	{
 		phipair[0] = TComplex(TMath::Cos(2 * phi[i]), TMath::Sin(2 * phi[i]));
 
-		for (int j = 0; j < 3; j++)
+		for (int j = 0; j < MULT; j++)
 		{
 			phipair[1] = TComplex(TMath::Cos(-2 * phi[j]), TMath::Sin(-2 * phi[j]));
 
@@ -557,12 +582,24 @@ void runEvent2PC(float phi)
 				}
 
 				mapParticleComboComplex[index].addElement(content);
+
+				if(index == 1)
+				{
+					f1->Fill(content.Re(), 1);
+				}
+				else if(index == 1)
+				{
+					f2->Fill(content.Re(), 1);
+				}
+				else if(index == 12)
+				{
+					f3->Fill(content.Re(), 1);
+				}
 			}
 		}
 	}
 
 	computeComplexKCumulant();
-	*/
 }
 
 
@@ -573,18 +610,24 @@ void loadSyntheticParticles()
 {
 	//Read in the tree from the particle generator and extract the phi branch
 	//There is an array of phi values for every event (i.e., every entry in the tree)
-	TFile file("simpletree.root");
+	TFile file("simpletree_10k.root");
 	TTreeReader reader("simpletree", &file);
-	TTreeReaderValue<float> d_phi(reader, "phi"); 
+	TTreeReaderArray<float> d_phi(reader, "phi");
 
 	//Run the cumulant calculation on an event-by-event basis
 	int nEvent = 0;
-	while (reader.Next()) 
+	std::vector<float> eventPhiValues;
+	while (reader.Next())
 	{
-		if(nEvent > 0) break; 
+		if (nEvent % 100 == 0) cout << "----> Processing event " << nEvent << endl;
 
-		cout << *d_phi << endl;
-		//runEvent2PC(phi);
+		for (int i = 0; i < MULT; i++)
+		{
+			eventPhiValues.push_back(d_phi[i]);
+		}
+
+		runEvent2PC(eventPhiValues);
+		eventPhiValues.clear();
 		nEvent++;
 	}
 }
@@ -664,6 +707,11 @@ void SetPartitionCalculator(int k)
 	loadSyntheticParticles();
 
 	//Compute cumulant
+	cout << "Sqrt(< k_2 >) = " << sqrt(avgCumulant->GetMean()) << endl << endl;
+
+	cout << "  --> [1] = " << f1->GetMean() << endl; 
+	cout << "  --> [2] = " << f2->GetMean() << endl; 
+	cout << "  --> [12] = " << f3->GetMean() << endl; 
 
 	//Print partitions and subsets, for diagnostic purposes
 	//printSetPartitions();
