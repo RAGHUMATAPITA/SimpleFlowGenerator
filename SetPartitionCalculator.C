@@ -472,6 +472,7 @@ void computeKCumulant()
 	cout << "CUMULANT = " << cumulant << endl;
 }
 
+
 /*
  * Implementation of the following formula for the cumulant using the partitions
  *
@@ -509,7 +510,6 @@ void computeComplexKCumulant()
 			PSet block     = partition.getSet(j);
 			int blockIndex = block.getSetIndex();
 
-			cout << "  -> Index = " << blockIndex << "; avg = " << mapParticleComboComplex[blockIndex].getAverageReal() << endl;
 			factor3 = factor3 * mapParticleComboComplex[blockIndex].getAverageReal();
 		}
 
@@ -524,45 +524,12 @@ void computeComplexKCumulant()
 
 
 /*
- * Load the particles from synthetic v2 generator
+ * 
  */
-void loadSyntheticParticles()
+void runEvent2PC(float phi)
 {
-	/*TFile *file = TFile::Open("simpletree.root");
-	if (!file)
-	{
-		cout << "File input error: file does not exist..." << endl;
-		return;
-	}
-
-	TTree *tree = (TTree *)file->Get("simpletree");
-	if (!tree)
-	{
-		cout << "File input error: cannot find tree..." << endl;
-		return;
-	}
-	*/
-
-	float phi[3] = {0.438487,
-	                   0.799722, 0.906486}; 
-
-	                   //1.15091, 0.866526, 0.628626,
-	                   //0.0439686, 1.84146, 1.16586, 0.275005, 0.0919604,
-	                   //1.10501, 1.23971, 0.833083, 0.122209, 0.120926,
-	                   //0.346903, 0.643142, 0.716915, 0.840366
-	                  //};
-
+	//cout << phi[0] << endl;
 	/*
-	TBranch *b_phi = tree->GetBranch("phi");
-	b_phi->SetAddress(d_phi);
-
-	int nevt = (int)tree->GetEntries(); // number of events in tree
-	for (int ievt = 0; ievt < nevt; ievt++) // loop over events
-	{
-		b_phi->GetEntry(ievt);
-	}
-	*/
-
 	TComplex phipair[2];
 
 	for (int i = 0; i < 3; i++)
@@ -590,10 +557,35 @@ void loadSyntheticParticles()
 				}
 
 				mapParticleComboComplex[index].addElement(content);
-
-				cout << "   Adding " << content.Re() << " + i " << content.Im() << " to " << index << endl;
 			}
 		}
+	}
+
+	computeComplexKCumulant();
+	*/
+}
+
+
+/*
+ * Load the particles from synthetic v2 generator
+ */
+void loadSyntheticParticles()
+{
+	//Read in the tree from the particle generator and extract the phi branch
+	//There is an array of phi values for every event (i.e., every entry in the tree)
+	TFile file("simpletree.root");
+	TTreeReader reader("simpletree", &file);
+	TTreeReaderValue<float> d_phi(reader, "phi"); 
+
+	//Run the cumulant calculation on an event-by-event basis
+	int nEvent = 0;
+	while (reader.Next()) 
+	{
+		if(nEvent > 0) break; 
+
+		cout << *d_phi << endl;
+		//runEvent2PC(phi);
+		nEvent++;
 	}
 }
 
@@ -669,11 +661,9 @@ void SetPartitionCalculator(int k)
 	initializeHistograms();
 
 	//Add particles for cumulant calculation
-	//loadParticles();
 	loadSyntheticParticles();
 
 	//Compute cumulant
-	computeComplexKCumulant();
 
 	//Print partitions and subsets, for diagnostic purposes
 	//printSetPartitions();
