@@ -146,7 +146,7 @@ struct SetList {
 //-------------------------------------
 
 //Number of particles per event
-const int MULT = 100;
+const int MULT = 6;
 
 //Set verbosity on or off
 bool verbosity = false;
@@ -154,9 +154,11 @@ bool verbosity = false;
 //TProfile to take the average of the cumulants over many events
 TProfile *avgCumulant;
 
-TProfile *f1;
-TProfile *f2;
-TProfile *f3;
+TProfile *f1234;
+TProfile *f13;
+TProfile *f24;
+TProfile *f14;
+TProfile *f23;
 
 //Vector to store the partitions of a given set, where each partition is a SetList object
 vector<SetList> setPartitions;
@@ -207,9 +209,11 @@ void initializeHistograms()
 
 	//Initialize TProfile to take the average cumulant over many events
 	avgCumulant = new TProfile("avgCumulant", "avgCumulant", 1, -1000, 1000);
-	f1 = new TProfile("f1", "f1", 1, -1000, 1000);
-	f2 = new TProfile("f2", "f2", 1, -1000, 1000);
-	f3 = new TProfile("f3", "f3", 1, -1000, 1000);
+	f1234 = new TProfile("f1234", "f1234", 1, -1000, 1000);
+	f13 = new TProfile("f13", "f13", 1, -1000, 1000);
+	f24 = new TProfile("f24", "f24", 1, -1000, 1000);
+	f14 = new TProfile("f14", "f14", 1, -1000, 1000);
+	f23 = new TProfile("f23", "f23", 1, -1000, 1000);
 }
 
 /*
@@ -408,7 +412,7 @@ void findPartitions(SetList sList)
 	SetList mergedList;
 
 	//Condition to break out of recursion
-	if (sList.listSize() == 1) return;
+	//if (sList.listSize() == 1) return;
 
 	for (int i = 0; i < sList.listSize(); i++)
 	{
@@ -467,8 +471,9 @@ void computeKCumulant()
 
 		if (verbosity)
 		{
-			cout << "--> Partition " << p << ":" << endl;
+			cout << "--> Partition " << p << ": ";
 			partition.printList();
+			cout << endl;
 			cout << "     Factor1 = " << factor1 << endl;
 			cout << "     Factor2 = " << factor2 << endl;
 		}
@@ -520,8 +525,9 @@ void computeComplexKCumulant()
 
 		if (verbosity)
 		{
-			cout << "--> Partition " << p << ":" << endl;
+			cout << "--> Partition " << p << ": ";
 			partition.printList();
+			cout << endl;
 			cout << "     Factor1 = " << factor1 << endl;
 			cout << "     Factor2 = " << factor2 << endl;
 		}
@@ -582,18 +588,141 @@ void runEvent2PC(std::vector<float> phi)
 				}
 
 				mapParticleComboComplex[index].addElement(content);
+			}
+		}
+	}
 
-				if(index == 1)
+	computeComplexKCumulant();
+}
+
+/*
+ *
+ */
+void runEvent4PC(std::vector<float> phi)
+{
+	TComplex phigroup[4];
+
+	for (int i = 0; i < MULT; i++)
+	{
+		phigroup[0] = TComplex(TMath::Cos(4 * phi[i]), TMath::Sin(4 * phi[i]));
+
+		for (int j = 0; j < MULT; j++)
+		{
+			phigroup[1] = TComplex(TMath::Cos(4 * phi[j]), TMath::Sin(4 * phi[j]));
+
+			for (int k = 0; k < MULT; k++)
+			{
+				phigroup[2] = TComplex(TMath::Cos(-4 * phi[k]), TMath::Sin(-4 * phi[k]));
+
+				for (int l = 0; l < MULT; l++)
 				{
-					f1->Fill(content.Re(), 1);
+					phigroup[3] = TComplex(TMath::Cos(-4 * phi[l]), TMath::Sin(-4 * phi[l]));
+
+					if (i == j || i == k || i == l || j == k || j == l || k == l) continue;
+
+					//cout << "PARTICLE PHIS  = " << phigroup[0] << "  " << phigroup[1] << "  " << phigroup[2] << "  " << phigroup[3] << endl;
+
+					for (int m = 0; m < setSubsets.size(); m++)
+					{
+						PSet s = setSubsets[m];
+						int index = s.getSetIndex();
+						TComplex content = TComplex(1, 0);
+
+						//Get the constituent digits of the index
+						int num = index;
+						while (num > 0)
+						{
+							content = content * phigroup[num % 10 - 1];
+							num = num / 10.0;
+						}
+
+						mapParticleComboComplex[index].addElement(content);
+
+						if (index == 13)
+						{
+							f13->Fill(content.Re(), 1);
+						}
+
+						if (index == 24)
+						{
+							f24->Fill(content.Re(), 1);
+						}
+
+						if (index == 14)
+						{
+							f14->Fill(content.Re(), 1);
+						}
+
+						if (index == 23)
+						{
+							f23->Fill(content.Re(), 1);
+						}
+
+						if (index == 1234)
+						{
+							f1234->Fill(content.Re(), 1);
+						}
+					}
 				}
-				else if(index == 1)
+			}
+		}
+	}
+
+	computeComplexKCumulant();
+}
+
+
+/*
+ *
+ */
+void runEvent6PC(std::vector<float> phi)
+{
+	TComplex phigroup[6];
+
+	for (int i = 0; i < MULT; i++)
+	{
+		phigroup[0] = TComplex(TMath::Cos(6 * phi[i]), TMath::Sin(6 * phi[i]));
+
+		for (int j = 0; j < MULT; j++)
+		{
+			phigroup[1] = TComplex(TMath::Cos(6 * phi[j]), TMath::Sin(6 * phi[j]));
+
+			for (int k = 0; k < MULT; k++)
+			{
+				phigroup[2] = TComplex(TMath::Cos(6 * phi[k]), TMath::Sin(6 * phi[k]));
+
+				for (int l = 0; l < MULT; l++)
 				{
-					f2->Fill(content.Re(), 1);
-				}
-				else if(index == 12)
-				{
-					f3->Fill(content.Re(), 1);
+					phigroup[3] = TComplex(TMath::Cos(-6 * phi[l]), TMath::Sin(-6 * phi[l]));
+
+					for (int m = 0; m < MULT; m++)
+					{
+						phigroup[4] = TComplex(TMath::Cos(-6 * phi[m]), TMath::Sin(-6 * phi[m]));
+
+						for (int n = 0; n < MULT; n++)
+						{
+							phigroup[5] = TComplex(TMath::Cos(-6 * phi[n]), TMath::Sin(-6 * phi[n]));
+
+							if (i == j || i == k || i == l || i == m || i == n || j == k || j == l || j == m || j == n || k == l || k == m || k == n || l == m || l == n || m == n) continue;
+
+							for (int t = 0; t < setSubsets.size(); t++)
+							{
+								PSet s = setSubsets[t];
+								int index = s.getSetIndex();
+								TComplex content = TComplex(1, 0);
+
+								//Get the constituent digits of the index
+								int num = index;
+								while (num > 0)
+								{
+									content = content * phigroup[num % 10 - 1];
+									num = num / 10.0;
+								}
+
+								mapParticleComboComplex[index].addElement(content);
+							}
+						}
+					}
 				}
 			}
 		}
@@ -619,6 +748,8 @@ void loadSyntheticParticles()
 	std::vector<float> eventPhiValues;
 	while (reader.Next())
 	{
+		//if (nEvent > 0) break;
+
 		if (nEvent % 100 == 0) cout << "----> Processing event " << nEvent << endl;
 
 		for (int i = 0; i < MULT; i++)
@@ -626,7 +757,19 @@ void loadSyntheticParticles()
 			eventPhiValues.push_back(d_phi[i]);
 		}
 
-		runEvent2PC(eventPhiValues);
+		if (kOrder == 2)
+		{
+			runEvent2PC(eventPhiValues);
+		}
+		else if (kOrder == 4)
+		{
+			runEvent4PC(eventPhiValues);
+		}
+		else if(kOrder == 6)
+		{
+			runEvent6PC(eventPhiValues);
+		}
+
 		eventPhiValues.clear();
 		nEvent++;
 	}
@@ -671,6 +814,16 @@ void loadParticles()
 
 
 /*
+ * Load the partitions for {1,2,3,4,5,6} from file instead
+ * of computing them recursively every time the program is run.
+ * This saves a lot of time!
+ */
+void load6PCPartitions()
+{
+
+}
+
+/*
  * Entry point for the library
  * The order of k-particle cumulants is given as parameter
  */
@@ -696,24 +849,27 @@ void SetPartitionCalculator(int k)
 	}
 
 	//Find partitions and subsets for the case of k-particle cumulants
+	cout << "Finding partitions for " << k << " elements" << endl << endl;
 	findPartitions(l1);
 
 	//Once found, define histograms to store the distribution of the product of particles
 	//for all possible combination of particles.
 	//The possible combinations are defined by the subsets themselves
+	cout << "Initializing complex variables for bookkeeping" << endl << endl;
 	initializeHistograms();
 
 	//Add particles for cumulant calculation
 	loadSyntheticParticles();
 
 	//Compute cumulant
-	cout << "Sqrt(< k_2 >) = " << sqrt(avgCumulant->GetMean()) << endl << endl;
-
-	cout << "  --> [1] = " << f1->GetMean() << endl; 
-	cout << "  --> [2] = " << f2->GetMean() << endl; 
-	cout << "  --> [12] = " << f3->GetMean() << endl; 
+	//cout << "Sqrt(< k_" << kOrder << " >) = " << pow(-1 * avgCumulant->GetMean(), 0.25) << endl << endl;
+	cout << "Sqrt(< k_" << kOrder << " >) = " << pow(avgCumulant->GetMean(), 0.5) << endl << endl;
+	if(kOrder == 6)
+	{
+		cout << "k_6 = " << avgCumulant->GetMean() << endl;
+	}
 
 	//Print partitions and subsets, for diagnostic purposes
-	//printSetPartitions();
-	//printSetSubsets();
+	printSetPartitions();
+	printSetSubsets();
 }
