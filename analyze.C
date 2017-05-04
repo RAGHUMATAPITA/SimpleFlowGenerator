@@ -173,6 +173,18 @@ int main(int argc, char *argv[])
 
   // --- from generic formulas
   TProfile *recursion[2][maxCorrelator] = {{NULL}}; // Correlations calculated from Q-vector components using recursive algorithm
+  for(Int_t cs=0;cs<2;cs++)
+    {
+      for(Int_t c=0;c<maxCorrelator;c++)
+        {
+          // correlations[cs][c] = new TProfile("","",1,0.,1.);
+          // correlations[cs][c]->Sumw2();
+          recursion[cs][c] = new TProfile("","",1,0.,1.);
+          recursion[cs][c]->Sumw2();
+          // nestedLoops[cs][c] = new TProfile("","",1,0.,1.);
+          // nestedLoops[cs][c]->Sumw2();
+        } // end of for(Int_t c=0;c<maxCorrelator;c++)
+    } // end of for(Int_t cs=0;cs<2;cs++)
 
   // --- Done with Histograms ---------------------
 
