@@ -52,6 +52,7 @@ double calc4_track(double, double, double, double, double, double, double, doubl
 double calc4_event_YZ(double, double, double, double, double);
 double calc4_track_YZ(double, double, double, double, double, double, double, double, double);
 
+double calc6_event(TComplex&, TComplex&, TComplex&, float);
 
 // --- from generic forumulas ----------------------------------------------------
 TComplex Q(Int_t, Int_t); // forward declaration...
@@ -252,6 +253,8 @@ int main(int argc, char *argv[])
       double Q2y = 0;
       double Q4x = 0;
       double Q4y = 0;
+      double Q6x = 0;
+      double Q6y = 0;
       double Q2x_sub = 0;
       double Q2y_sub = 0;
       double Q4x_sub = 0;
@@ -292,6 +295,8 @@ int main(int argc, char *argv[])
 	  Q2y += sin(2*phi);
 	  Q4x += cos(4*phi);
 	  Q4y += sin(4*phi);
+	  Q6x += cos(6*phi);
+	  Q6y += sin(6*phi);
 	  Q2xprime += cos(2*phiprime);
 	  Q2yprime += sin(2*phiprime);
 	  Q4xprime += cos(4*phiprime);
@@ -326,6 +331,11 @@ int main(int argc, char *argv[])
       tp1d_YZ_p4->Fill(1,fourYZ);
       tp1d_YZ_p4mult->Fill(mult,fourYZ);
 
+      TComplex tc_Q2(Q2x,Q2y);
+      TComplex tc_Q4(Q4x,Q4y);
+      TComplex tc_Q6(Q6x,Q6y);
+      double six = calc6_event(tc_Q2,tc_Q4,tc_Q6,mult);
+
       // --- from generic formulas ----------------------------------------------------------------------------
       //  2-p correlations:
       //cout<<" => Calculating 2-p correlations (using recursion)...       \r"<<flush;
@@ -343,6 +353,14 @@ int main(int argc, char *argv[])
       Double_t wFourRecursion = Recursion(4,harmonics_Four_Den).Re();
       recursion[0][2]->Fill(0.5,fourRecursion.Re(),wFourRecursion); // <<cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4)>>
       recursion[1][2]->Fill(0.5,fourRecursion.Im(),wFourRecursion); // <<sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4)>>
+      //  6-p correlations:
+      //cout<<" => Calculating 6-p correlations (using recursion)...       \r"<<flush;
+      Int_t harmonics_Six_Num[6] = {h1,h2,h3,h4,h5,h6};
+      Int_t harmonics_Six_Den[6] = {0,0,0,0,0,0};
+      TComplex sixRecursion = Recursion(6,harmonics_Six_Num)/Recursion(6,harmonics_Six_Den).Re();
+      Double_t wSixRecursion = Recursion(6,harmonics_Six_Den).Re();
+      recursion[0][4]->Fill(0.5,sixRecursion.Re(),wSixRecursion); // <<cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6)>>
+      recursion[1][4]->Fill(0.5,sixRecursion.Im(),wSixRecursion); // <<<sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6)>>
       // ------------------------------------------------------------------------------------------------------
 
       if ( say_event )
@@ -351,6 +369,8 @@ int main(int argc, char *argv[])
           cout << "recursive two particle calculation: " << twoRecursion.Re() << endl;
           cout << "conventional four particle calculation: " << four << endl;
           cout << "recursive four particle calculation: " << fourRecursion.Re() << endl;
+          cout << "conventional six particle calculation: " << six << endl;
+          cout << "recursive six particle calculation: " << sixRecursion.Re() << endl;
         }
 
       for(int itrk=0; itrk<mult; itrk++)
@@ -514,6 +534,61 @@ double calc4_track_YZ(double pnx, double pny, double p2nx, double p2ny, double Q
   double dn4 = (one - two - three - four - five + six - seven + eight + nine + 2*mp*MQT - 6*mp) / (mp*(MQT-1)*(MQT-2)*(MQT-3));
 
   return dn4;
+
+}
+
+double calc6_event(TComplex& qn, TComplex& q2n, TComplex& q3n, float M)
+{
+
+  if ( M < 6 ) return -9999;
+
+  // TComplex qn, q2n, q3n;
+  // qn = TComplex(Q2x,Q2y);
+  // q2n = TComplex(Q4x,Q4y);
+  // q3n = TComplex(Q6x,Q6y);
+
+  TComplex temp1;
+
+  // first term
+  // |Qn|^6 + 9*|Q2n|^2|Qn|^2 - 6 x Re[Q2n x Qn x Qn* x Qn* x Qn*] / (Mx(M-1)x(M-2)x(M-3)x(M-4)x(M-5)
+  double term1a = TMath::Power((qn*TComplex::Conjugate(qn)),3);
+  double term1b = 9.0 * q2n*TComplex::Conjugate(q2n) * qn*TComplex::Conjugate(qn);
+  temp1 = q2n * qn * TComplex::Conjugate(qn) * TComplex::Conjugate(qn) * TComplex::Conjugate(qn);
+  double term1c = -6.0 * temp1.Re();
+  double term1 = (term1a+term1b+term1c)/(M*(M-1)*(M-2)*(M-3)*(M-4)*(M-5));
+
+  // second term
+  // 4 * [Re[Q3nQn*Qn*Qn*] - 3 Re[Q3nQ2n*Qn*]] / (M(M-1)(M-2)(M-3)(M-4)(M-5)
+  temp1 = q3n * TComplex::Conjugate(qn) * TComplex::Conjugate(qn) * TComplex::Conjugate(qn);
+  double term2a = temp1.Re();
+  temp1 = q3n * TComplex::Conjugate(q2n) * TComplex::Conjugate(qn);
+  double term2b = -3.0 * temp1.Re();
+  double term2 = 4.0 * (term2a+term2b)/(M*(M-1)*(M-2)*(M-3)*(M-4)*(M-5));
+
+  // third term
+  // +2 * (9*(M-4)*Re[Q2nQn*qn*] + 2 |Q3n|^2) / ((M(M-1)(M-2)(M-3)(M-4)(M-5))
+  temp1 = q2n*TComplex::Conjugate(qn)*TComplex::Conjugate(qn);
+  double term3a = 9.0*(M-4)*temp1.Re();
+  double term3b = 2.0*q3n*TComplex::Conjugate(q3n);
+  double term3 = 2.0 * (term3a + term3b) / (M*(M-1)*(M-2)*(M-3)*(M-4)*(M-5));
+
+  // fourth term
+  //double term4 = -9.0 * (TMath::Power(qn*TComplex::Conjugate(qn),2)+q2n*TComplex::Conjugate(q2n)) / (M*(M-1)*(M-2)*(M-3)*(M-5));
+  double term4 = -9.0 * (TMath::Power(qn*TComplex::Conjugate(qn),2)+q2n*TComplex::Conjugate(q2n)) ;
+  term4 /= (M*(M-1)*(M-2)*(M-3)*(M-5));
+
+  // fifth term
+  //double term5 = 18.0 * qn*TComplex::Conjugate(qn) / (M*(M-1)*(M-3)*(M-4));
+  double term5 = 18.0 * qn*TComplex::Conjugate(qn) ;
+  term5 /=  (M*(M-1)*(M-3)*(M-4));
+
+  // sixth term
+  double term6 = -6.0/((M-1)*(M-2)*(M-3));
+
+  // cos(n(phi1+phi2+phi3-phi4-phi5-phi6))
+  double six = term1 + term2 + term3 + term4 + term5 + term6;
+
+  return six;
 
 }
 
