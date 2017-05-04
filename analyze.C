@@ -17,6 +17,7 @@
 #include "TH2.h"
 #include "TProfile.h"
 #include "TMath.h"
+#include "TComplex.h"
 
 using namespace std;
 
@@ -51,6 +52,17 @@ float calc4_track(float, float, float, float, float, float, float, float, float)
 float calc4_event_YZ(float, float, float, float, float);
 float calc4_track_YZ(float, float, float, float, float, float, float, float, float);
 
+
+// --- from generic forumulas ----------------------------------------------------
+//const Int_t h1=1, h2=3, h3=5, h4=0, h5=-2, h6=-4, h7=-1, h8=-6; // from the code
+const Int_t h1=2, h2=-2, h3=2, h4=-2, h5=2, h6=-2, h7=2, h8=-2; // simplifed to v2
+const Int_t sum = (h1<0?-1*h1:h1)+(h2<0?-1*h2:h2)+(h3<0?-1*h3:h3)+(h4<0?-1*h4:h4)
+                + (h5<0?-1*h5:h5)+(h6<0?-1*h6:h6)+(h7<0?-1*h7:h7)+(h8<0?-1*h8:h8);
+const Int_t maxCorrelator = 8; // We will not go beyond 8-p correlations
+const Int_t maxHarmonic = sum+1;
+const Int_t maxPower = maxCorrelator+1;
+TComplex Qvector[maxHarmonic][maxPower]; // All needed Q-vector components
+// -------------------------------------------------------------------------------
 
 
 // Main part of program
@@ -156,6 +168,8 @@ int main(int argc, char *argv[])
   TH1D *th1d_psi2prime_tmr = new TH1D("th1d_psi2prime_tmr","",100,-twopi,twopi);
   TProfile *tp1d_psi2prime_tmr = new TProfile("tp1d_psi2prime_tmr","",1,-twopi,twopi);
 
+  // --- from generic formulas
+  TProfile *recursion[2][maxCorrelator] = {{NULL}}; // Correlations calculated from Q-vector components using recursive algorithm
 
   // --- Done with Histograms ---------------------
 
@@ -193,8 +207,9 @@ int main(int argc, char *argv[])
   for(int ievt=0; ievt<nevt; ievt++) // loop over events
     {
 
-      if(ievt%1000 == 0) cout << "processing event number " << ievt << endl;
-      //if(ievt>1000) break;
+      bool say_event = ( ievt%1000 == 0) ;
+      if ( say_event ) cout << "processing event number " << ievt << endl;
+      if ( ievt > 1000 ) break;
 
       b_mult->GetEntry(ievt);
       b_psi2->GetEntry(ievt);
@@ -208,6 +223,15 @@ int main(int argc, char *argv[])
       float psi2true = d_psi2;
       th1d_psi2->Fill(psi2true);
 
+      // --- for the generic formulas ---------
+      for(Int_t h=0;h<maxHarmonic;h++)
+        {
+          for(Int_t p=0;p<maxPower;p++)
+            {
+              Qvector[h][p] = TComplex(0.,0.);
+            } //  for(Int_t p=0;p<maxPower;p++)
+        } // for(Int_t h=0;h<maxHarmonic;h++)
+      // --------------------------------------
       // --- first track loop, q-vectors
       float Q2x = 0;
       float Q2y = 0;
@@ -235,6 +259,20 @@ int main(int argc, char *argv[])
 	  float xprime = x - xoff;
 	  float yprime = y - yoff;
 	  float phiprime = atan2(yprime,xprime);
+          // --- from generic formulas ----------------------------------------------------------------------
+          Double_t dPhi = 0.0; // particle angle
+          Double_t wPhi = 1.0; // particle weight
+          Double_t wPhiToPowerP = 1.0; // particle weight raised to power p
+          dPhi = phi; // minimal change from me to match the generic forumlas code
+          for(Int_t h=0;h<maxHarmonic;h++)
+            {
+              for(Int_t p=0;p<maxPower;p++)
+                {
+                  //if(bUseWeights){wPhiToPowerP = pow(wPhi,p);} // no weights for us...
+                  Qvector[h][p] += TComplex(wPhiToPowerP*TMath::Cos(h*dPhi),wPhiToPowerP*TMath::Sin(h*dPhi));
+                } //  for(Int_t p=0;p<maxPower;p++)
+            } // for(Int_t h=0;h<maxHarmonic;h++)
+          // ------------------------------------------------------------------------------------------------
 	  Q2x += cos(2*phi);
 	  Q2y += sin(2*phi);
 	  Q4x += cos(4*phi);
@@ -272,6 +310,33 @@ int main(int argc, char *argv[])
       tp1d_p4mult->Fill(mult,four);
       tp1d_YZ_p4->Fill(1,fourYZ);
       tp1d_YZ_p4mult->Fill(mult,fourYZ);
+
+      // --- from generic formulas ----------------------------------------------------------------------------
+      //  2-p correlations:
+      //cout<<" => Calculating 2-p correlations (using recursion)...       \r"<<flush;
+      Int_t harmonics_Two_Num[2] = {h1,h2}; // 2, -2
+      Int_t harmonics_Two_Den[2] = {0,0}; // recursion gives right combinatorics
+      TComplex twoRecursion = Recursion(2,harmonics_Two_Num)/Recursion(2,harmonics_Two_Den).Re();
+      Double_t wTwoRecursion = Recursion(2,harmonics_Two_Den).Re();
+      recursion[0][0]->Fill(0.5,twoRecursion.Re(),wTwoRecursion); // <<cos(h1*phi1+h2*phi2)>>
+      recursion[1][0]->Fill(0.5,twoRecursion.Im(),wTwoRecursion); // <<sin(h1*phi1+h2*phi2)>>
+      //  4-p correlations:
+      //cout<<" => Calculating 4-p correlations (using recursion)...       \r"<<flush;
+      Int_t harmonics_Four_Num[4] = {h1,h2,h3,h4}; // 2, -2, 2, -2 // what about 2, 2, -2, -2?
+      Int_t harmonics_Four_Den[4] = {0,0,0,0}; // recursion gives right combinatorics
+      TComplex fourRecursion = Recursion(4,harmonics_Four_Num)/Recursion(4,harmonics_Four_Den).Re();
+      Double_t wFourRecursion = Recursion(4,harmonics_Four_Den).Re();
+      recursion[0][2]->Fill(0.5,fourRecursion.Re(),wFourRecursion); // <<cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4)>>
+      recursion[1][2]->Fill(0.5,fourRecursion.Im(),wFourRecursion); // <<sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4)>>
+      // ------------------------------------------------------------------------------------------------------
+
+      if ( say_event )
+        {
+          cout << "conventional two particle calculation: " << two << endl;
+          cout << "recursive two particle calculation: " << twoRecusion.Re() << endl;
+          cout << "conventional four particle calculation: " << four << endl;
+          cout << "recursive four particle calculation: " << fourRecusion.Re() << endl;
+        }
 
       for(int itrk=0; itrk<mult; itrk++)
 	{
@@ -436,3 +501,51 @@ float calc4_track_YZ(float pnx, float pny, float p2nx, float p2ny, float QTx, fl
   return dn4;
 
 }
+
+// --- from generic forumulas ----------------------------------------------------
+TComplex Recursion(Int_t n, Int_t* harmonic, Int_t mult = 1, Int_t skip = 0)
+{
+ // Calculate multi-particle correlators by using recursion (an improved faster version) originally developed by
+ // Kristjan Gulbrandsen (gulbrand@nbi.dk).
+
+  Int_t nm1 = n-1;
+  TComplex c(Q(harmonic[nm1], mult));
+  if (nm1 == 0) return c;
+  c *= Recursion(nm1, harmonic);
+  if (nm1 == skip) return c;
+
+  Int_t multp1 = mult+1;
+  Int_t nm2 = n-2;
+  Int_t counter1 = 0;
+  Int_t hhold = harmonic[counter1];
+  harmonic[counter1] = harmonic[nm2];
+  harmonic[nm2] = hhold + harmonic[nm1];
+  TComplex c2(Recursion(nm1, harmonic, multp1, nm2));
+  Int_t counter2 = n-3;
+  while (counter2 >= skip) {
+    harmonic[nm2] = harmonic[counter1];
+    harmonic[counter1] = hhold;
+    ++counter1;
+    hhold = harmonic[counter1];
+    harmonic[counter1] = harmonic[nm2];
+    harmonic[nm2] = hhold + harmonic[nm1];
+    c2 += Recursion(nm1, harmonic, multp1, counter2);
+    --counter2;
+  }
+  harmonic[nm2] = harmonic[counter1];
+  harmonic[counter1] = hhold;
+
+  if (mult == 1) return c-c2;
+  return c-Double_t(mult)*c2;
+
+}
+
+TComplex Q(Int_t n, Int_t p)
+{
+ // Using the fact that Q{-n,p} = Q{n,p}^*.
+
+ if(n>=0){return Qvector[n][p];}
+ return TComplex::Conjugate(Qvector[-n][p]);
+
+} // TComplex Q(Int_t n, Int_t p)
+// -------------------------------------------------------------------------------
