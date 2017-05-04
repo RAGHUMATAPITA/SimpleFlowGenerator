@@ -29,6 +29,11 @@ void doit(const char *flag)
   TCanvas *c1 = new TCanvas();
 
   TFile *file = TFile::Open(Form("out_%s.root",flag));
+  if ( file == NULL )
+    {
+      cout << "file not found" << endl;
+      return;
+    }
 
   TH1D *th1d_v2pT_pure = ((TProfile *)file->Get("tp1d_v2pT_pure"))->ProjectionX();
   TH1D *th1d_v2pT_true = ((TProfile *)file->Get("tp1d_v2pT_true"))->ProjectionX();
@@ -114,8 +119,8 @@ void doit(const char *flag)
   leg2->SetTextSize(0.05);
   leg2->Draw();
 
-  c1->Print(Form("comparison_eventplane_%s.png",flag));
-  c1->Print(Form("comparison_eventplane_%s.pdf",flag));
+  c1->Print(Form("Figures/comparison_eventplane_%s.png",flag));
+  c1->Print(Form("Figures/comparison_eventplane_%s.pdf",flag));
 
 
 
