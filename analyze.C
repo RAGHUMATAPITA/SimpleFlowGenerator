@@ -54,6 +54,9 @@ float calc4_track_YZ(float, float, float, float, float, float, float, float, flo
 
 
 // --- from generic forumulas ----------------------------------------------------
+TComplex Q(Int_t, Int_t); // forward declaration...
+TComplex Recursion(Int_t, Int_t*); // forward declaration...
+TComplex Recursion(Int_t, Int_t*, Int_t, Int_t); // forward declaration...
 //const Int_t h1=1, h2=3, h3=5, h4=0, h5=-2, h6=-4, h7=-1, h8=-6; // from the code
 const Int_t h1=2, h2=-2, h3=2, h4=-2, h5=2, h6=-2, h7=2, h8=-2; // simplifed to v2
 const Int_t sum = (h1<0?-1*h1:h1)+(h2<0?-1*h2:h2)+(h3<0?-1*h3:h3)+(h4<0?-1*h4:h4)
@@ -333,9 +336,9 @@ int main(int argc, char *argv[])
       if ( say_event )
         {
           cout << "conventional two particle calculation: " << two << endl;
-          cout << "recursive two particle calculation: " << twoRecusion.Re() << endl;
+          cout << "recursive two particle calculation: " << twoRecursion.Re() << endl;
           cout << "conventional four particle calculation: " << four << endl;
-          cout << "recursive four particle calculation: " << fourRecusion.Re() << endl;
+          cout << "recursive four particle calculation: " << fourRecursion.Re() << endl;
         }
 
       for(int itrk=0; itrk<mult; itrk++)
@@ -503,7 +506,14 @@ float calc4_track_YZ(float pnx, float pny, float p2nx, float p2ny, float QTx, fl
 }
 
 // --- from generic forumulas ----------------------------------------------------
-TComplex Recursion(Int_t n, Int_t* harmonic, Int_t mult = 1, Int_t skip = 0)
+//TComplex Recursion(Int_t n, Int_t* harmonic, Int_t mult = 1, Int_t skip = 0) // ROOT allows you to do dumb shit that C++ doesn't
+// need to implement separate two argument version
+TComplex Recursion(Int_t n, Int_t* harmonic)
+{
+  return Recursion(n,harmonic,1,0); // 1 and 0 are defaults from above
+}
+// remove default arguments in list
+TComplex Recursion(Int_t n, Int_t* harmonic, Int_t mult, Int_t skip)
 {
  // Calculate multi-particle correlators by using recursion (an improved faster version) originally developed by
  // Kristjan Gulbrandsen (gulbrand@nbi.dk).
