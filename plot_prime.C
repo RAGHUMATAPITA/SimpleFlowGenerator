@@ -92,8 +92,8 @@ void doit(const char *flag)
   leg->SetFillStyle(0);
   leg->Draw();
 
-  c1->Print(Form("comparison_%s.png",flag));
-  c1->Print(Form("comparison_%s.pdf",flag));
+  c1->Print(Form("Figures/comparison_%s.png",flag));
+  c1->Print(Form("Figures/comparison_%s.pdf",flag));
 
   // ---
 
