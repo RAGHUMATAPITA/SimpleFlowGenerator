@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
         {
           // correlations[cs][c] = new TProfile("","",1,0.,1.);
           // correlations[cs][c]->Sumw2();
-          recursion[cs][c] = new TProfile("","",1,0.,1.);
+          recursion[cs][c] = new TProfile(Form("tp1d_rescursion_%d_%d",cs,c),"",1,0.,1.);
           recursion[cs][c]->Sumw2();
           // nestedLoops[cs][c] = new TProfile("","",1,0.,1.);
           // nestedLoops[cs][c]->Sumw2();
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 
       bool say_event = ( ievt%1000 == 0) ;
       if ( say_event ) cout << "processing event number " << ievt << endl;
-      if ( ievt > 4000 ) break;
+      if ( ievt > 50000 ) break;
 
       b_mult->GetEntry(ievt);
       b_psi2->GetEntry(ievt);
@@ -361,6 +361,14 @@ int main(int argc, char *argv[])
       double wSixRecursion = Recursion(6,harmonics_Six_Den).Re();
       recursion[0][4]->Fill(0.5,sixRecursion.Re(),wSixRecursion); // <<cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6)>>
       recursion[1][4]->Fill(0.5,sixRecursion.Im(),wSixRecursion); // <<<sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6)>>
+      //  8-p correlations:
+      //cout<<" => Calculating 6-p correlations (using recursion)...       \r"<<flush;
+      int harmonics_Eight_Num[8] = {h1,h2,h3,h4,h5,h6,h7,h8};
+      int harmonics_Eight_Den[8] = {0,0,0,0,0,0,0,0};
+      TComplex eightRecursion = Recursion(8,harmonics_Eight_Num)/Recursion(8,harmonics_Eight_Den).Re();
+      double wEightRecursion = Recursion(8,harmonics_Eight_Den).Re();
+      recursion[0][6]->Fill(0.5,eightRecursion.Re(),wEightRecursion); // <<cos(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6)>>
+      recursion[1][6]->Fill(0.5,eightRecursion.Im(),wEightRecursion); // <<<sin(h1*phi1+h2*phi2+h3*phi3+h4*phi4+h5*phi5+h6*phi6)>>
       // ------------------------------------------------------------------------------------------------------
 
       if ( say_event )
@@ -371,6 +379,7 @@ int main(int argc, char *argv[])
           cout << "recursive four particle calculation: " << fourRecursion.Re() << endl;
           cout << "conventional six particle calculation: " << six << endl;
           cout << "recursive six particle calculation: " << sixRecursion.Re() << endl;
+          cout << "recursive eight particle calculation: " << eightRecursion.Re() << endl;
         }
 
       for(int itrk=0; itrk<mult; itrk++)
