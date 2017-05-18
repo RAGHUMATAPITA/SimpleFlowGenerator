@@ -77,7 +77,7 @@ int main()
     {
       if(i % 1000 == 0) cout << i << " events processed so far " << endl;
       int ntracks = maxmult; //...
-      ntracks = 20;
+      ntracks = 25;
       int ntrk = dostuff(ntracks,tree);
       hmult->Fill(ntrk);
     }
