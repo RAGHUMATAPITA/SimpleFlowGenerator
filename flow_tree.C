@@ -20,6 +20,8 @@ int dostuff(const int, TTree*); // function prototype...
 
 const double pi = TMath::Pi();
 
+const double v2prefactor = 0.1;
+
 const int maxmult = 400;
 const int nptbins = 100;
 
@@ -47,7 +49,7 @@ int main()
   for(int i=0; i<nptbins; i++)
     {
       float pt = 2.0*i/float(nptbins);
-      float v2 = 0.1*pt;
+      float v2 = v2prefactor*pt;
       funphiarray[i] = new TF1("funphi","1 + 2*[0]*TMath::Cos(2*x)",-pi,pi);
       funphiarray[i]->SetParameter(0,v2);
     }
@@ -108,7 +110,7 @@ int dostuff(const int number, TTree *tree)
 
       float pt = funpt->GetRandom();
 
-      float v2 = 0.1*pt;
+      float v2 = v2prefactor*pt;
       //funphi->SetParameter(0,v2);
       int ptbin = pt*nptbins/2;
       float phi = funphiarray[ptbin]->GetRandom();
