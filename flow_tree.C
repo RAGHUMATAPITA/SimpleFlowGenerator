@@ -20,7 +20,7 @@ int dostuff(const int, TTree*); // function prototype...
 
 const double pi = TMath::Pi();
 
-const double v2prefactor = 0.1;
+const double v2prefactor = 0.05;
 
 const int maxmult = 400;
 const int nptbins = 100;
@@ -79,7 +79,7 @@ int main()
     {
       if(i % 1000 == 0) cout << i << " events processed so far " << endl;
       int ntracks = maxmult; //...
-      ntracks = 25;
+      ntracks = 30;
       int ntrk = dostuff(ntracks,tree);
       hmult->Fill(ntrk);
     }
