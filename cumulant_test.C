@@ -3,11 +3,12 @@ void doit(const char*);
 void cumulant_test()
 {
 
-  doit("testest10.root");
-  doit("testest20.root");
-  doit("testest25.root");
-  doit("testest30.root");
-  doit("testest400.root");
+  doit("testest10_new05.root");
+  doit("testest15_new05.root");
+  doit("testest20_new05.root");
+  doit("testest25_new05.root");
+  doit("testest30_new05.root");
+  doit("testest400_new05.root");
 
 }
 
@@ -32,7 +33,7 @@ void doit(const char* filename)
   double ctwo = dtwo;
   double cfor = dfor - (2*dtwo*dtwo);
   double csix = dsix - (9*dfor*dtwo) + (12*dtwo*dtwo*dtwo);
-  double ceit = 0; //  will look this one up later
+  double ceit = deit - (16*dsix*dtwo) - (18*dfor*dfor) + (144*dfor*dtwo*dtwo) - (144*dtwo*dtwo*dtwo*dtwo);
 
   double ftwo = pow(dtwo,(1.0/2.0));
   double ffor = pow(dfor,(1.0/4.0));
@@ -42,7 +43,7 @@ void doit(const char* filename)
   double vtwo = pow(ctwo,(1.0/2.0));
   double vfor = pow(-cfor,(1.0/4.0));
   double vsix = pow(0.25*csix,(1.0/6.0));
-  double veit = pow((1.0/33.0)*ceit,(1.0/8.0));
+  double veit = pow(-(1.0/33.0)*ceit,(1.0/8.0));
 
   cout << ftwo << " " << vtwo << endl;
   cout << ffor << " " << vfor << endl;

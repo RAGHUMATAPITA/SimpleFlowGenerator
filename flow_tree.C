@@ -72,14 +72,14 @@ int main()
 
   cout << "now starting loop" << endl;
 
-  int nevents = 1000000; // way too slow for v2(pT), okay but long for fixed v2
+  //int nevents = 1000000; // way too slow for v2(pT), okay but long for fixed v2
   //int nevents = 100000; // way too slow for v2(pT), fine for fixed v2
-  //int nevents = 10000; // good for either
+  int nevents = 10000; // good for either
   for(int i=0; i<nevents; i++)
     {
       if(i % 1000 == 0) cout << i << " events processed so far " << endl;
       int ntracks = maxmult; //...
-      ntracks = 30;
+      ntracks = 400;
       int ntrk = dostuff(ntracks,tree);
       hmult->Fill(ntrk);
     }
