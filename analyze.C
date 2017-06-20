@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 
       bool say_event = ( ievt%1000 == 0) ;
       if ( say_event ) cout << "processing event number " << ievt << endl;
-      if ( ievt > 500000 ) break;
+      //if ( ievt > 500000 ) break; // probably better to avoid this
 
       b_mult->GetEntry(ievt);
       b_psi2->GetEntry(ievt);
