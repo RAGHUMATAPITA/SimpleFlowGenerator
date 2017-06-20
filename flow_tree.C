@@ -40,6 +40,8 @@ TF1 *funphiarray[nptbins];
 int main()
 {
 
+  gRandom->SetSeed(1); // unsigned int, adjust as needed, consider adding argument to main for it
+
   cout << "setting up functions" << endl;
 
   funpt = new TF1("funpt","TMath::Exp(-0.35*x)",0.0,2.0); // inverse slope param of 350 MeV
@@ -72,14 +74,14 @@ int main()
 
   cout << "now starting loop" << endl;
 
-  //int nevents = 1000000; // way too slow for v2(pT), okay but long for fixed v2
-  //int nevents = 100000; // way too slow for v2(pT), fine for fixed v2
-  int nevents = 10000; // good for either
+  //int nevents = 1000000;
+  //int nevents = 100000;
+  int nevents = 10000; // should make argument
   for(int i=0; i<nevents; i++)
     {
       if(i % 1000 == 0) cout << i << " events processed so far " << endl;
-      int ntracks = maxmult; //...
-      ntracks = 400;
+      int ntracks = maxmult; // could make variable if desired, but that would probably lead to ugly multiplicity binnings...
+      ntracks = 400; // should make argument
       int ntrk = dostuff(ntracks,tree);
       hmult->Fill(ntrk);
     }
